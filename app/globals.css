@@ -1,26 +1,90 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy-0: #0a1420;
+  --navy-1: #0f2036;
+  --navy-2: #16283d;
+  --navy-3: #203352;
+  --line: #2a3e5c;
+  --gold: #a8d80a;
+  --gold-bright: #c4f505;
+  --paper: #f3efe6;
+  --paper-dim: #c9c2af;
+  --slate: #8394aa;
+  --win: #3fa672;
+  --lose: #b5563c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-navy-0: var(--navy-0);
+  --color-navy-1: var(--navy-1);
+  --color-navy-2: var(--navy-2);
+  --color-navy-3: var(--navy-3);
+  --color-line: var(--line);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-paper: var(--paper);
+  --color-paper-dim: var(--paper-dim);
+  --color-slate: var(--slate);
+  --color-win: var(--win);
+  --color-lose: var(--lose);
+  --font-display: var(--font-sora), sans-serif;
+  --font-body: var(--font-sora), sans-serif;
+}
+body {
+  background:
+    radial-gradient(
+      ellipse 900px 500px at 15% -5%,
+      rgba(196, 245, 5, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 700px 500px at 100% 10%,
+      rgba(63, 166, 114, 0.05),
+      transparent 55%
+    ),
+    var(--navy-0);
+  color: var(--paper);
+  font-family: var(--font-sora), sans-serif;
+  line-height: 1.5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+a {
+  color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes feedIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse 2s infinite;
+}
+
+.animate-feed-in {
+  animation: feedIn 0.4s ease;
 }
