@@ -5,35 +5,38 @@ export default function Footer() {
 
   return (
     <>
-      <section className='py-18 pb-14 text-center'>
+      <section className='pt-18 pb-14 text-center'>
         <div className='mx-auto max-w-270 px-6'>
-          <div className='mb-3 font-mono text-xs tracking-[2px] text-gold uppercase'>
+          <div className='mb-3  text-xs tracking-[2px] font-extrabold text-success uppercase'>
             Don&apos;t just wait
           </div>
-          <h2 className='mx-auto max-w-160 font-display text-[clamp(26px,4.2vw,40px)] font-extrabold tracking-[0.3px] uppercase'>
+          <h2 className='mx-auto max-w-160 font-display text-[clamp(28px,4.5vw,44px)] font-extrabold tracking-[-0.01em] text-black'>
             Be part of the journey
           </h2>
-          <p className='mx-auto mt-5 max-w-140 text-[16.5px] text-paper-dim'>
+          <p className='mx-auto mt-4 max-w-125 text-[16.5px] text-placeholder'>
             Every prediction before launch brings you closer to Founder rewards,
             bigger launch bonuses, and a shot at the Grand Prize.
           </p>
-          <div className='mt-8.5 flex flex-wrap justify-center gap-2.5'>
+          <div className='mt-8 flex flex-wrap justify-center gap-2.5'>
             <a
               href='#market'
-              className='inline-block rounded-lg bg-gold px-6 py-3.25 font-bold text-navy-0 no-underline transition-[transform,box-shadow] hover:-translate-y-px hover:bg-gold-bright hover:shadow-[0_10px_24px_-10px_rgba(168,216,10,0.55)]'
+              className='inline-block rounded-lg bg-brand-green px-6 py-3.25 font-bold text-black no-underline'
             >
               Make today&apos;s call
             </a>
           </div>
-          <div className='mt-3.5 font-mono text-[12.5px] tracking-[0.3px] text-slate'>
+          <div className='mt-3.5  text-[12px] tracking-[0.3px] text-neutral-10'>
             NO REGISTRATION &nbsp;·&nbsp; NO DEPOSIT &nbsp;·&nbsp; NO PAYMENT
             REQUIRED
           </div>
         </div>
       </section>
-      <footer className='px-6 py-7 pb-10 text-center font-mono text-[11.5px] text-slate'>
+
+      <div className='mx-auto max-w-140 border-t border-dashed border-border' />
+
+      <footer className='px-6 py-8 text-center  text-[11.5px] text-neutral-10'>
         <Image
-          src='/Santibet Logo.svg'
+          src='/Santibet Logo (white).svg'
           alt='SantiBet'
           width={169}
           height={38}

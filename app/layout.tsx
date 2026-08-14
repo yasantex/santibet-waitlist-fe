@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Sora } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import './globals.css'
 
-const sora = Sora({
-  variable: '--font-sora',
+const outfit = Outfit({
+  variable: '--font-outfit',
   subsets: ['latin'],
 })
 
@@ -19,8 +19,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en'>
-      <body className={`${sora.variable} antialiased`}>{children}</body>
+    <html lang='en' className='scroll-smooth'>
+      <body className={`${outfit.variable} antialiased bg-background text-foreground`}>
+        {children}
+      </body>
     </html>
   )
 }

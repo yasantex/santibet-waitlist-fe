@@ -3,40 +3,46 @@ import SectionHead from './SectionHead'
 
 export default function GrandPrize() {
   return (
-    <section id='grand' className='border-b border-line py-17'>
+    <section id='grand' className='scroll-mt-24 py-16'>
       <div className='mx-auto max-w-270 px-6'>
         <SectionHead
           kicker='Grand prize draw'
           title='Every correct prediction is an entry'
           subtitle='21 winners on launch day — not just one.'
         />
-        <div className='mx-auto max-w-180 rounded-2xl border border-gold bg-linear-to-b from-navy-2 to-navy-1 px-9 py-11 text-center'>
-          <div className='font-display text-[clamp(38px,6.5vw,58px)] font-extrabold tracking-[0.5px] text-gold-bright'>
-            ₦1,000,000
+        <div className='mx-auto max-w-180 rounded-2xl border border-dashed border-border bg-plain px-9 py-11 text-center'>
+          <div className='relative inline-block px-2'>
+            <span
+              aria-hidden='true'
+              className='absolute inset-x-0 bottom-[0.12em] h-[0.26em] rotate-1 bg-brand-green'
+            />
+            <span className='relative font-display text-[clamp(38px,6.5vw,58px)] font-extrabold tracking-[-0.01em] text-black'>
+              ₦1,000,000
+            </span>
           </div>
-          <div className='mt-1.5 font-mono text-xs tracking-[2px] text-slate uppercase'>
+          <div className='mt-2 text-xs tracking-[2px] text-neutral-10 uppercase'>
             Grand Prize · Cash · 1 winner
           </div>
 
-          <div className='mt-.5 border-t border-line pt-6 text-left'>
+          <div className='mt-6 border-t border-dashed border-border pt-6 text-left'>
             {prizeTiers.map((tier) => (
               <div
                 key={tier.name}
-                className='flex items-center justify-between gap-4 border-b border-line py-3.5 last:border-b-0'
+                className='flex items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0'
               >
                 <div>
-                  <div className='font-display text-lg font-bold tracking-[0.3px] uppercase'>
+                  <div className='font-display text-lg font-bold tracking-[0.3px] text-black uppercase'>
                     {tier.name}
                   </div>
-                  <div className='mt-0.5 text-[13px] text-paper-dim'>
+                  <div className='mt-0.5 text-[13px] text-placeholder'>
                     {tier.sub}
                   </div>
                 </div>
                 <div className='shrink-0 text-right'>
-                  <div className='font-mono text-sm font-bold text-gold-bright'>
+                  <div className='text-sm font-bold text-success'>
                     {tier.winners}
                   </div>
-                  <div className='mt-0.5 font-mono text-[11px] text-slate'>
+                  <div className='mt-0.5 text-[11px] text-neutral-10'>
                     {tier.cap}
                   </div>
                 </div>
@@ -44,7 +50,7 @@ export default function GrandPrize() {
             ))}
           </div>
 
-          <div className='mt-5.5 border-t border-dashed border-line pt-4 text-left text-[11.5px] leading-relaxed text-slate'>
+          <div className='mt-5.5 border-t border-dashed border-border pt-4 text-left text-[11.5px] leading-relaxed text-neutral-10'>
             Welcome bonus prizes are wagering credits for use on SantiBet. Terms
             and conditions apply — maximum payout amounts apply per tier as
             stated above.

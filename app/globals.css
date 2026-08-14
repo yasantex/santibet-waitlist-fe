@@ -1,51 +1,59 @@
 @import 'tailwindcss';
 
 :root {
-  --navy-0: #0a1420;
-  --navy-1: #0f2036;
-  --navy-2: #16283d;
-  --navy-3: #203352;
-  --line: #2a3e5c;
-  --gold: #a8d80a;
-  --gold-bright: #c4f505;
-  --paper: #f3efe6;
-  --paper-dim: #c9c2af;
-  --slate: #8394aa;
-  --win: #3fa672;
-  --lose: #b5563c;
+  color-scheme: light;
+  --background: #ffffff;
+  --gradient: #f0f2fa;
+  --white: #ffffff;
+  --black: #000000;
+  --foreground: #171717;
 }
 
-@theme inline {
-  --color-navy-0: var(--navy-0);
-  --color-navy-1: var(--navy-1);
-  --color-navy-2: var(--navy-2);
-  --color-navy-3: var(--navy-3);
-  --color-line: var(--line);
-  --color-gold: var(--gold);
-  --color-gold-bright: var(--gold-bright);
-  --color-paper: var(--paper);
-  --color-paper-dim: var(--paper-dim);
-  --color-slate: var(--slate);
-  --color-win: var(--win);
-  --color-lose: var(--lose);
-  --font-display: var(--font-sora), sans-serif;
-  --font-body: var(--font-sora), sans-serif;
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-track: #a4a4a4;
+  --color-plain: #f0f0f0;
+  --color-surface-base: #ddf1e4;
+  --color-black: #000000;
+  --color-text-black: #000000;
+  --color-neutral-10: #9aa09c;
+  --font-outfit: 'Outfit', sans-serif;
+  --color-error: #ef4444;
+  --color-error-bg: #ffeded;
+  --color-surface-error: #fff2f2;
+  --color-border-error: #ff2e2e;
+  --color-border: #e4e5e3;
+  --color-hover: #eaeaea;
+  --color-surface-hover: #9aa09c;
+  --color-success: #238b45;
+  --color-surface-success: #eefcf3;
+  --color-brand-green: #c6f135;
+  --color-card: #e4e5e3;
+  --color-warning: #ff8000;
+  --color-success-bg: #eefcf3;
+  --color-glass: #e4e5e3;
+  --color-placeholder: #6b706d;
+  --color-market-success: #183123;
+  --color-market-error: #341f20;
+  --font-display: var(--font-outfit), sans-serif;
+  --font-body: var(--font-outfit), sans-serif;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
-  background:
-    radial-gradient(
-      ellipse 900px 500px at 15% -5%,
-      rgba(196, 245, 5, 0.08),
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse 700px 500px at 100% 10%,
-      rgba(63, 166, 114, 0.05),
-      transparent 55%
-    ),
-    var(--navy-0);
-  color: var(--paper);
-  font-family: var(--font-sora), sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-outfit), sans-serif;
   line-height: 1.5;
 }
 
@@ -56,8 +64,17 @@ a {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--gold-bright);
+  outline: 2px solid var(--color-success);
   outline-offset: 3px;
+}
+
+/* Barcode texture used on the slip masthead — pure CSS, no image assets */
+.barcode {
+  background-image: repeating-linear-gradient(
+    90deg,
+    currentColor 0 2px,
+    transparent 2px 5px
+  );
 }
 
 @keyframes pulse {

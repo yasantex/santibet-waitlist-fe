@@ -1,30 +1,26 @@
-import FounderBenefits from "@/src/components/FounderBenefits";
-import FounderLevels from "@/src/components/FounderLevels";
 import Footer from "@/src/components/Footer";
+import FounderProgram from "@/src/components/FounderProgram";
 import GrandPrize from "@/src/components/GrandPrize";
-import Hero from "@/src/components/Hero";
-import Journey from "@/src/components/Journey";
-import Leaderboard from "@/src/components/Leaderboard";
-import LiveActivityFeed from "@/src/components/LiveActivityFeed";
-import MarketSection from "@/src/components/MarketSection";
-import PreviousResults from "@/src/components/PreviousResults";
-import ReferFriend from "@/src/components/ReferFriend";
 import Header from "@/src/components/Header";
+import Hero from "@/src/components/Hero";
+import HowItWorks from "@/src/components/HowItWorks";
+import Leaderboard from "@/src/components/Leaderboard";
+import MarketSection from "@/src/components/MarketSection";
+import ProofSection from "@/src/components/ProofSection";
+import ReferFriend from "@/src/components/ReferFriend";
 
 export default function Home() {
   return (
     <>
       <Header />
       <Hero />
+      <HowItWorks />
       <MarketSection />
-      <LiveActivityFeed />
-      <PreviousResults />
-      <Leaderboard />
-      <Journey />
-      <ReferFriend />
+      <ProofSection />
       <GrandPrize />
-      <FounderLevels />
-      <FounderBenefits />
+      <Leaderboard />
+      <FounderProgram />
+      <ReferFriend />
       <Footer />
     </>
   );
