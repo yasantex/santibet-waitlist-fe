@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Outfit } from 'next/font/google'
 import './globals.css'
+import { AppProvider } from '@/src/provider/AppProvider'
 
 const outfit = Outfit({
   variable: '--font-outfit',
@@ -20,8 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' className='scroll-smooth'>
-      <body className={`${outfit.variable} antialiased bg-background text-foreground`}>
-        {children}
+      <body
+        className={`${outfit.variable} antialiased bg-background text-foreground`}
+      >
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   )

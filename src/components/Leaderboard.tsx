@@ -17,7 +17,7 @@ export default function Leaderboard() {
               className='grid grid-cols-[36px_1fr_auto] items-center gap-3.5 border-b border-border px-5.5 py-3.5 text-[14.5px] last:border-b-0'
             >
               {entry.top ? (
-                <span className='flex h-7 w-7 items-center justify-center rounded-full bg-success  text-[12px] font-bold text-white'>
+                <span className='flex h-7 w-7 items-center justify-center rounded-full bg-brand-green  text-[12px] font-bold text-black'>
                   {entry.rank}
                 </span>
               ) : (

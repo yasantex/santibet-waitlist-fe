@@ -34,13 +34,13 @@ export default function Footer() {
 
       <div className='mx-auto max-w-140 border-t border-dashed border-border' />
 
-      <footer className='px-6 py-8 text-center  text-[11.5px] text-neutral-10'>
+      <footer className='px-6 py-8 text-center flex flex-col items-center justify-center text-xs gap-2.5 text-neutral-10'>
         <Image
-          src='/Santibet Logo (white).svg'
+          src='/Santibet Logo.svg'
           alt='SantiBet'
-          width={169}
+          width={100}
           height={38}
-          className='h-12 mx-auto w-auto'
+          className='h-11 shrink-0'
           priority
         />
         <div>

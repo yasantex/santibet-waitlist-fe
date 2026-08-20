@@ -9,7 +9,7 @@ export default function Hero() {
         Pre-launch · Predictions live daily
       </div>
 
-      <h1 className='mx-auto max-w-230 font-display text-[clamp(42px,8.5vw,84px)] leading-[0.94] font-extrabold tracking-[-0.01em] text-black'>
+      <h1 className='mx-auto max-w-230 px-5 font-display text-[clamp(42px,8.5vw,84px)] leading-[0.94] font-extrabold tracking-[-0.01em] text-black'>
         Predict.{' '}
         <span className='relative inline-block px-1'>
           <span
