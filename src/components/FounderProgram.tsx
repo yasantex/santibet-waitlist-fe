@@ -12,7 +12,7 @@ export default function FounderProgram() {
         />
 
         {/* Level ladder */}
-        <div className='relative mx-auto max-w-225'>
+        {/* <div className='relative mx-auto max-w-225'>
           <div className='pointer-events-none absolute top-[22px] right-8 left-8 hidden border-t border-dashed border-border sm:block' />
           <div className='flex gap-7 overflow-x-auto pb-2 sm:justify-between sm:overflow-visible'>
             {founderLevels.map((level) => (
@@ -32,7 +32,7 @@ export default function FounderProgram() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Benefits checklist */}
         <div className='mx-auto mt-11 max-w-190'>
