@@ -1,7 +1,37 @@
-import { prizeTiers } from '../utils/data'
+'use client'
+
+import { prizeTiers as mockPrizeTiers } from '../utils/data'
 import SectionHead from './SectionHead'
+import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
+import type { Money, PrizeTierRule } from '../types/campaign'
+
+function formatMoney(money: Money) {
+  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
+  return `${prefix}${Number(money.amount).toLocaleString()}`
+}
+
+function tierSub(tier: PrizeTierRule) {
+  const kindLabel =
+    tier.kind === 'CASH'
+      ? 'cash'
+      : tier.kind === 'AIRTIME'
+        ? 'airtime'
+        : 'SantiBet welcome bonus'
+  return `${formatMoney(tier.amount)} ${kindLabel} each`
+}
 
 export default function GrandPrize() {
+  const { activeCampaign } = useActiveCampaign()
+  const { data: rules } = useCampaignRules(activeCampaign?.slug)
+
+  const launchTiers = rules?.prizes
+    .find((p) => p.period === 'LAUNCH')
+    ?.tiers.slice()
+    .sort((a, b) => a.place - b.place)
+
+  const headline = launchTiers?.[0]
+  const otherTiers = launchTiers?.slice(1)
+
   return (
     <section id='grand' className='scroll-mt-24 py-16'>
       <div className='mx-auto max-w-270 px-6'>
@@ -17,15 +47,32 @@ export default function GrandPrize() {
               className='absolute inset-x-0 bottom-[0.12em] h-[0.26em] rotate-1 bg-brand-green'
             />
             <span className='relative font-display text-[clamp(38px,6.5vw,58px)] font-extrabold tracking-[-0.01em] text-black'>
-              ₦1,000,000
+              {headline ? formatMoney(headline.amount) : '₦1,000,000'}
             </span>
           </div>
           <div className='mt-2 text-xs tracking-[2px] text-neutral-10 uppercase'>
-            Grand Prize · Cash · 1 winner
+            {headline
+              ? `Grand Prize · ${headline.kind === 'CASH' ? 'Cash' : headline.kind === 'AIRTIME' ? 'Airtime' : 'Welcome bonus'} · ${headline.winnerCount} winner${headline.winnerCount > 1 ? 's' : ''}`
+              : 'Grand Prize · Cash · 1 winner'}
           </div>
 
           <div className='mt-6 border-t border-dashed border-border pt-6 text-left'>
-            {prizeTiers.map((tier) => (
+            {(otherTiers && otherTiers.length > 0
+              ? otherTiers.map((tier) => ({
+                  name:
+                    tier.place === 2
+                      ? '2nd Prize'
+                      : tier.place === 3
+                        ? '3rd Prize'
+                        : tier.name,
+                  sub: tierSub(tier),
+                  winners: `${tier.winnerCount} winners`,
+                  cap: tier.maxPayout
+                    ? `Max ${formatMoney(tier.maxPayout)} payout`
+                    : '',
+                }))
+              : mockPrizeTiers
+            ).map((tier) => (
               <div
                 key={tier.name}
                 className='flex items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0'

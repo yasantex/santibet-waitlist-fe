@@ -1,35 +1,177 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { todaysMarket } from '../utils/data'
 import { PredictionSide } from '../utils/types'
+import {
+  getApiErrorMessage,
+  useActiveCampaign,
+  useCampaignStats,
+  useConfirmVerification,
+  useMe,
+  usePredict,
+  useSendVerification,
+  useTodayQuestion,
+} from '../hooks/useCampaign'
+import { useCountdown } from '../hooks/useCountdown'
+import { useAppDispatch, useAppSelector } from '../redux/hooks'
+import { setStanding } from '../redux/campaignSlice'
+import type { Money } from '../types/campaign'
 
 const dayClock = '12:00:00'
 
+function formatMoney(money: Money) {
+  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
+  return `${prefix}${Number(money.amount).toLocaleString()}`
+}
+
+type Stage = 'pick' | 'phone' | 'code' | 'done'
+
 export default function MarketCard() {
+  const dispatch = useAppDispatch()
+  const standing = useAppSelector((s) => s.campaign.standing)
+
+  const { activeCampaign } = useActiveCampaign()
+  const slug = activeCampaign?.slug ?? null
+  const { data: stats } = useCampaignStats(slug)
+  const { data: todayQuestion, isError: todayQuestionError } =
+    useTodayQuestion(slug)
+  const { data: meData } = useMe(slug)
+  const closes = useCountdown(todayQuestion?.closesAt)
+
+  const isLive = Boolean(slug) && Boolean(todayQuestion) && !todayQuestionError
+  const knownReturningPlayer = isLive && Boolean(standing)
+
+  const predictMutation = usePredict(slug)
+  const confirmMutation = useConfirmVerification(slug)
+  const resendMutation = useSendVerification(slug)
+
   const [pickedSide, setPickedSide] = useState<PredictionSide | null>(null)
   const [phone, setPhone] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [founderNumber, setFounderNumber] = useState('')
-  const [founderRank, setFounderRank] = useState('')
-  const [referLink, setReferLink] = useState('')
+  const [code, setCode] = useState('')
+  const [stage, setStage] = useState<Stage>('pick')
+  const [destination, setDestination] = useState('')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [referralCode] = useState<string | undefined>(() =>
+    typeof window === 'undefined'
+      ? undefined
+      : (new URLSearchParams(window.location.search).get('ref') ?? undefined),
+  )
 
-  const canSubmit = phone.trim().length > 0
+  // demo fallback fields — used only while no campaign is live yet
+  const [demoFounderNumber, setDemoFounderNumber] = useState('')
+  const [demoFounderRank, setDemoFounderRank] = useState('')
+  const [demoReferLink, setDemoReferLink] = useState('')
+
+  useEffect(() => {
+    if (meData) dispatch(setStanding(meData))
+  }, [meData, dispatch])
+
+  const submitted = stage === 'done'
+  const showPhoneStep = !knownReturningPlayer
+  const canSubmit = knownReturningPlayer || phone.trim().length > 0
+
+  const questionText = todayQuestion?.text ?? todaysMarket.question
+  const yesPercent = stats?.today?.yesPercent ?? todaysMarket.yesPercent
+  const noPercent =
+    stats?.today?.yesPercent != null
+      ? 100 - stats.today.yesPercent
+      : todaysMarket.noPercent
+  const alreadyPredicted = stats
+    ? (stats.today?.predictions ?? stats.totalPredictions).toLocaleString()
+    : todaysMarket.alreadyPredicted
+  const prizePoolLabel = stats?.dailyPrizePool?.[0]
+    ? formatMoney(stats.dailyPrizePool[0])
+    : todaysMarket.prizePool
+  const closesClock =
+    isLive && closes
+      ? `${closes.hours}:${closes.mins}:${closes.secs}`
+      : dayClock
 
   function handlePick(side: PredictionSide) {
     setPickedSide(side)
+    setErrorMsg(null)
   }
 
-  function handleSubmit() {
-    if (!canSubmit) return
+  async function handleLiveSubmit() {
+    if (!pickedSide || !slug) return
+    setErrorMsg(null)
+    try {
+      const result = await predictMutation.mutateAsync({
+        choice: pickedSide.toUpperCase() as 'YES' | 'NO',
+        phone: knownReturningPlayer ? undefined : phone.trim(),
+        referralCode,
+      })
+      if (result.status === 'AWAITING_CODE') {
+        setDestination(result.destination ?? '')
+        setStage('code')
+      } else {
+        setStage('done')
+      }
+    } catch (err) {
+      setErrorMsg(getApiErrorMessage(err, 'Something went wrong. Please try again.'))
+    }
+  }
+
+  async function handleConfirmCode() {
+    if (code.trim().length !== 6) return
+    setErrorMsg(null)
+    try {
+      const result = await confirmMutation.mutateAsync({
+        phone: phone.trim(),
+        code: code.trim(),
+      })
+      dispatch(setStanding(result))
+      setStage('done')
+    } catch (err) {
+      setErrorMsg(getApiErrorMessage(err, 'That code is invalid or has expired.'))
+    }
+  }
+
+  function handleDemoSubmit() {
+    if (!phone.trim()) return
     const num = 18000 + Math.floor(Math.random() * 900)
     const rank = 2000 + Math.floor(Math.random() * 400)
-    setFounderNumber(`#${num.toLocaleString()}`)
-    setFounderRank(`#${rank.toLocaleString()}`)
-    setReferLink(`santibet.ng/r/${num}`)
-    setSubmitted(true)
+    setDemoFounderNumber(`#${num.toLocaleString()}`)
+    setDemoFounderRank(`#${rank.toLocaleString()}`)
+    setDemoReferLink(`santibet.ng/r/${num}`)
+    setStage('done')
   }
+
+  async function handleResendCode() {
+    setErrorMsg(null)
+    try {
+      const result = await resendMutation.mutateAsync({ phone: phone.trim() })
+      setDestination(result.destination)
+    } catch (err) {
+      setErrorMsg(getApiErrorMessage(err, 'Could not resend the code — try again shortly.'))
+    }
+  }
+
+  function handlePrimarySubmit() {
+    if (isLive) {
+      handleLiveSubmit()
+    } else {
+      handleDemoSubmit()
+    }
+  }
+
+  const referLink = isLive
+    ? standing
+      ? `${window.location.origin}/?ref=${standing.referralCode}`
+      : ''
+    : demoReferLink
+  const founderNumber = isLive
+    ? standing
+      ? `#${standing.participantNumber.toLocaleString()}`
+      : ''
+    : demoFounderNumber
+  const founderRank = isLive
+    ? standing?.rank != null
+      ? `#${standing.rank.toLocaleString()}`
+      : '—'
+    : demoFounderRank
 
   async function handleCopy() {
     try {
@@ -40,6 +182,8 @@ export default function MarketCard() {
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
   }
+
+  const submitting = predictMutation.isPending || confirmMutation.isPending
 
   return (
     <div className='mx-auto max-w-140'>
@@ -63,7 +207,7 @@ export default function MarketCard() {
                 Today&apos;s Market
               </div>
               <div className='mb-5.5 font-display text-[32px] leading-8 font-bold text-black'>
-                {todaysMarket.question}
+                {questionText}
               </div>
 
               <div className='mb-5 flex gap-3'>
@@ -79,11 +223,11 @@ export default function MarketCard() {
                 >
                   <div
                     className='absolute top-0 bottom-0 left-0 z-0 bg-success/[0.12]'
-                    style={{ width: `${todaysMarket.yesPercent}%` }}
+                    style={{ width: `${yesPercent}%` }}
                   />
                   <span className='relative z-10 block'>YES</span>
                   <span className='relative z-10 mt-1 block  text-[13px] text-neutral-10'>
-                    {todaysMarket.yesPercent}% of predictions
+                    {yesPercent}% of predictions
                   </span>
                 </button>
                 <button
@@ -98,11 +242,11 @@ export default function MarketCard() {
                 >
                   <div
                     className='absolute top-0 bottom-0 left-0 z-0 bg-error/[0.12]'
-                    style={{ width: `${todaysMarket.noPercent}%` }}
+                    style={{ width: `${noPercent}%` }}
                   />
                   <span className='relative z-10 block'>NO</span>
                   <span className='relative z-10 mt-1 block  text-[13px] text-neutral-10'>
-                    {todaysMarket.noPercent}% of predictions
+                    {noPercent}% of predictions
                   </span>
                 </button>
               </div>
@@ -113,7 +257,7 @@ export default function MarketCard() {
                     Closes in
                   </div>
                   <div className=' text-[15px] font-bold text-success'>
-                    {dayClock}
+                    {closesClock}
                   </div>
                 </div>
                 <div className='text-center'>
@@ -121,7 +265,7 @@ export default function MarketCard() {
                     Already predicted
                   </div>
                   <div className=' text-[15px] font-bold text-black'>
-                    {todaysMarket.alreadyPredicted}
+                    {alreadyPredicted}
                   </div>
                 </div>
                 <div className='text-center'>
@@ -129,46 +273,107 @@ export default function MarketCard() {
                     Prize pool today
                   </div>
                   <div className=' text-[15px] font-bold text-black'>
-                    {todaysMarket.prizePool}
+                    {prizePoolLabel}
                   </div>
                 </div>
               </div>
 
-              {pickedSide && (
+              {pickedSide && stage !== 'code' && (
                 <div className='mt-5.5 border-t border-dashed border-border pt-5'>
                   <div className='mb-3 text-sm text-placeholder'>
                     Great choice — you predicted{' '}
                     <strong className='text-black'>
                       {pickedSide.toUpperCase()}
                     </strong>
-                    . Enter your mobile number to lock it in.
+                    .{' '}
+                    {showPhoneStep
+                      ? 'Enter your mobile number to lock it in.'
+                      : 'Tap confirm to lock it in.'}
                   </div>
                   <div className='flex flex-wrap gap-2.5'>
-                    <input
-                      type='tel'
-                      placeholder='Your mobile number'
-                      aria-label='Mobile number'
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className='min-w-45 flex-1 rounded-lg border border-border bg-white px-4 py-3.25 text-[15px] text-black placeholder:text-placeholder'
-                    />
+                    {showPhoneStep && (
+                      <input
+                        type='tel'
+                        placeholder='Your mobile number'
+                        aria-label='Mobile number'
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className='min-w-45 flex-1 rounded-lg border border-border bg-white px-4 py-3.25 text-[15px] text-black placeholder:text-placeholder'
+                      />
+                    )}
                     <button
                       type='button'
-                      onClick={handleSubmit}
-                      disabled={!canSubmit}
+                      onClick={handlePrimarySubmit}
+                      disabled={!canSubmit || submitting}
                       className={`rounded-lg px-6 py-3.25 font-bold transition-colors ${
-                        canSubmit
+                        canSubmit && !submitting
                           ? 'bg-brand-green text-black'
                           : 'cursor-not-allowed bg-border text-neutral-10'
                       }`}
                     >
-                      Confirm prediction
+                      {submitting ? 'Submitting…' : 'Confirm prediction'}
                     </button>
                   </div>
-                  <div className='mt-2.5 text-[12px] text-neutral-10'>
-                    We only use this to save your daily prediction — no spam,
-                    ever.
+                  {showPhoneStep && (
+                    <div className='mt-2.5 text-[12px] text-neutral-10'>
+                      We only use this to save your daily prediction — no spam,
+                      ever.
+                    </div>
+                  )}
+                  {errorMsg && (
+                    <div className='mt-2.5 text-[12.5px] font-medium text-error'>
+                      {errorMsg}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {stage === 'code' && (
+                <div className='mt-5.5 border-t border-dashed border-border pt-5'>
+                  <div className='mb-3 text-sm text-placeholder'>
+                    We sent a 6-digit code to{' '}
+                    <strong className='text-black'>{destination}</strong>.
+                    Enter it to confirm your prediction.
                   </div>
+                  <div className='flex flex-wrap gap-2.5'>
+                    <input
+                      type='text'
+                      inputMode='numeric'
+                      maxLength={6}
+                      placeholder='6-digit code'
+                      aria-label='Verification code'
+                      value={code}
+                      onChange={(e) =>
+                        setCode(e.target.value.replace(/\D/g, ''))
+                      }
+                      className='min-w-45 flex-1 rounded-lg border border-border bg-white px-4 py-3.25 text-[15px] tracking-[4px] text-black placeholder:text-placeholder placeholder:tracking-normal'
+                    />
+                    <button
+                      type='button'
+                      onClick={handleConfirmCode}
+                      disabled={code.trim().length !== 6 || submitting}
+                      className={`rounded-lg px-6 py-3.25 font-bold transition-colors ${
+                        code.trim().length === 6 && !submitting
+                          ? 'bg-brand-green text-black'
+                          : 'cursor-not-allowed bg-border text-neutral-10'
+                      }`}
+                    >
+                      {submitting ? 'Verifying…' : 'Verify & submit'}
+                    </button>
+                  </div>
+                  {errorMsg && (
+                    <div className='mt-2.5 text-[12.5px] font-medium text-error'>
+                      {errorMsg}
+                    </div>
+                  )}
+                  <button
+                    type='button'
+                    onClick={handleResendCode}
+                    disabled={resendMutation.isPending}
+                    className='mt-2.5 text-[12px] font-medium text-neutral-10 underline underline-offset-2'
+                  >
+                    {resendMutation.isPending ? 'Resending…' : "Didn't get it? Resend code"}
+                  </button>
                 </div>
               )}
             </div>
