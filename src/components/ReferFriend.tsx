@@ -1,7 +1,39 @@
-import { referMilestones, referSteps } from '../utils/data'
+'use client'
+
+import { referSteps } from '../utils/data'
 import SectionHead from './SectionHead'
+import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
+import type { Money, ReferralMilestone } from '../types/campaign'
+
+function formatMoney(money: Money) {
+  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
+  return `${prefix}${Number(money.amount).toLocaleString()}`
+}
+
+function milestoneReward(m: ReferralMilestone) {
+  const parts: string[] = []
+  if (m.reward) {
+    const kindLabel =
+      m.rewardKind === 'CASH'
+        ? 'cash'
+        : m.rewardKind === 'AIRTIME'
+          ? 'airtime'
+          : 'bonus credit'
+    parts.push(`${formatMoney(m.reward)} ${kindLabel}`)
+  }
+  if (m.bonusPoints) parts.push(`${m.bonusPoints} bonus points`)
+  if (m.bonusDrawEntries)
+    parts.push(`${m.bonusDrawEntries} extra draw entries`)
+  return parts.join(' + ') || 'Bonus rewards'
+}
 
 export default function ReferFriend() {
+  const { activeCampaign } = useActiveCampaign()
+  const { data: rules } = useCampaignRules(activeCampaign?.slug)
+  const milestones = rules?.referralMilestones
+    .slice()
+    .sort((a, b) => a.friendCount - b.friendCount)
+
   return (
     <section id='refer' className='scroll-mt-24 py-16'>
       <div className='mx-auto max-w-270 px-6'>
@@ -26,19 +58,29 @@ export default function ReferFriend() {
         </div>
 
         <div className='mx-auto max-w-140 overflow-hidden rounded-xl bg-plain'>
-          {referMilestones.map((m) => (
-            <div
-              key={m.count}
-              className='flex items-center justify-between gap-4 border-b border-border px-5.5 py-4 text-[14.5px] last:border-b-0'
-            >
-              <div className='shrink-0 font-display text-lg text-black'>
-                {m.count}
-              </div>
-              <div className='text-right  text-[13px] text-success'>
-                {m.reward}
-              </div>
+          {!milestones ? (
+            <div className='p-6 text-center text-sm text-neutral-10'>
+              Loading referral rewards…
             </div>
-          ))}
+          ) : milestones.length === 0 ? (
+            <div className='p-6 text-center text-sm text-neutral-10'>
+              No referral milestones published yet.
+            </div>
+          ) : (
+            milestones.map((m) => (
+              <div
+                key={m.friendCount}
+                className='flex items-center justify-between gap-4 border-b border-border px-5.5 py-4 text-[14.5px] last:border-b-0'
+              >
+                <div className='shrink-0 font-display text-lg text-black'>
+                  {m.friendCount} friends
+                </div>
+                <div className='text-right  text-[13px] text-success'>
+                  {milestoneReward(m)}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>
