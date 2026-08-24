@@ -1,7 +1,23 @@
+'use client'
+
 import CountdownTimer from './CountdownTimer'
-import { todaysMarket } from '../utils/data'
+import { useActiveCampaign, useCampaignStats } from '../hooks/useCampaign'
 
 export default function Hero() {
+  const { activeCampaign } = useActiveCampaign()
+  const { data: stats } = useCampaignStats(activeCampaign?.slug)
+
+  const prizePool = stats?.dailyPrizePool?.[0]
+  const prizePoolLabel = prizePool
+    ? `${prizePool.currency === 'NGN' ? '₦' : prizePool.currency + ' '}${Number(
+        prizePool.amount,
+      ).toLocaleString()}`
+    : '—'
+  const predictedLabel = (
+    stats?.today?.predictions ?? stats?.totalPredictions ?? 0
+  ).toLocaleString()
+  const yesPercent = stats?.today?.yesPercent
+
   return (
     <div className='mx-auto h-screen flex flex-col gap-5 items-center justify-center py-20 text-center'>
       <div className='font-medium rounded-full border border-dashed border-border  px-4 py-1.75 text-sm text-success'>
@@ -26,13 +42,15 @@ export default function Hero() {
         on launch day.
       </p>
       <div className='flex gap-2.5 items-center justify-center font-medium mx-auto rounded-full border border-dashed border-border px-5 py-2.5 text-sm w-fit text-neutral-10'>
-        <span>{todaysMarket.prizePool} Pool today</span>
+        <span>{prizePoolLabel} Pool today</span>
         <span className='text-black'>·</span>
-        <span>{todaysMarket.alreadyPredicted} Predictions</span>
-        <span className='text-black'>·</span>
-        <span className='text-success'>
-          {todaysMarket.yesPercent}% said Yes
-        </span>
+        <span>{predictedLabel} Predictions</span>
+        {yesPercent != null && (
+          <>
+            <span className='text-black'>·</span>
+            <span className='text-success'>{yesPercent}% said Yes</span>
+          </>
+        )}
       </div>
 
       <CountdownTimer />

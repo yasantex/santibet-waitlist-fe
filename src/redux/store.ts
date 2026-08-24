@@ -11,6 +11,7 @@ import {
 } from 'redux-persist'
 import storage from 'redux-persist/lib/storage' // defaults to localStorage for web
 import userSlice from './userSlice'
+import campaignSlice from './campaignSlice'
 const persistConfig = {
   key: 'root', // key is required
   storage, // storage engine
@@ -21,6 +22,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   user: userSlice,
+  campaign: campaignSlice,
   // other reducers would go here
 })
 
