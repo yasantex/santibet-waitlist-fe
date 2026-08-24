@@ -3,11 +3,11 @@
 import { useActiveCampaign } from '../hooks/useCampaign'
 import { useCountdown } from '../hooks/useCountdown'
 
-const fallbackCountdown = {
-  days: '80',
-  hours: '00',
-  mins: '00',
-  secs: '00',
+const loadingCountdown = {
+  days: '—',
+  hours: '—',
+  mins: '—',
+  secs: '—',
 }
 
 function FlipUnit({ value, label }: { value: string; label: string }) {
@@ -26,7 +26,7 @@ export default function CountdownTimer() {
   const target = activeCampaign?.launchAt ?? activeCampaign?.startsOn ?? null
   const live = useCountdown(target)
 
-  const { days, hours, mins, secs } = live ?? fallbackCountdown
+  const { days, hours, mins, secs } = live ?? loadingCountdown
 
   return (
     <div

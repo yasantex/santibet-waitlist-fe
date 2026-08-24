@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { todaysMarket } from '../utils/data'
 import { PredictionSide } from '../utils/types'
 import {
   getApiErrorMessage,
@@ -18,8 +17,6 @@ import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import { setStanding } from '../redux/campaignSlice'
 import type { Money } from '../types/campaign'
 
-const dayClock = '12:00:00'
-
 function formatMoney(money: Money) {
   const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
   return `${prefix}${Number(money.amount).toLocaleString()}`
@@ -31,16 +28,18 @@ export default function MarketCard() {
   const dispatch = useAppDispatch()
   const standing = useAppSelector((s) => s.campaign.standing)
 
-  const { activeCampaign } = useActiveCampaign()
+  const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
   const { data: stats } = useCampaignStats(slug)
-  const { data: todayQuestion, isError: todayQuestionError } =
-    useTodayQuestion(slug)
+  const {
+    data: todayQuestion,
+    isLoading: questionLoading,
+    isError: todayQuestionError,
+  } = useTodayQuestion(slug)
   const { data: meData } = useMe(slug)
   const closes = useCountdown(todayQuestion?.closesAt)
 
-  const isLive = Boolean(slug) && Boolean(todayQuestion) && !todayQuestionError
-  const knownReturningPlayer = isLive && Boolean(standing)
+  const knownReturningPlayer = Boolean(standing)
 
   const predictMutation = usePredict(slug)
   const confirmMutation = useConfirmVerification(slug)
@@ -59,11 +58,6 @@ export default function MarketCard() {
       : (new URLSearchParams(window.location.search).get('ref') ?? undefined),
   )
 
-  // demo fallback fields — used only while no campaign is live yet
-  const [demoFounderNumber, setDemoFounderNumber] = useState('')
-  const [demoFounderRank, setDemoFounderRank] = useState('')
-  const [demoReferLink, setDemoReferLink] = useState('')
-
   useEffect(() => {
     if (meData) dispatch(setStanding(meData))
   }, [meData, dispatch])
@@ -72,29 +66,27 @@ export default function MarketCard() {
   const showPhoneStep = !knownReturningPlayer
   const canSubmit = knownReturningPlayer || phone.trim().length > 0
 
-  const questionText = todayQuestion?.text ?? todaysMarket.question
-  const yesPercent = stats?.today?.yesPercent ?? todaysMarket.yesPercent
+  const yesPercent = stats?.today?.yesPercent
   const noPercent =
-    stats?.today?.yesPercent != null
-      ? 100 - stats.today.yesPercent
-      : todaysMarket.noPercent
-  const alreadyPredicted = stats
-    ? (stats.today?.predictions ?? stats.totalPredictions).toLocaleString()
-    : todaysMarket.alreadyPredicted
+    yesPercent != null ? 100 - yesPercent : undefined
+  const yesPercentLabel = yesPercent != null ? `${yesPercent}%` : 'No predictions yet'
+  const noPercentLabel = noPercent != null ? `${noPercent}%` : 'No predictions yet'
+  const alreadyPredicted = (
+    stats?.today?.predictions ?? stats?.totalPredictions ?? 0
+  ).toLocaleString()
   const prizePoolLabel = stats?.dailyPrizePool?.[0]
     ? formatMoney(stats.dailyPrizePool[0])
-    : todaysMarket.prizePool
-  const closesClock =
-    isLive && closes
-      ? `${closes.hours}:${closes.mins}:${closes.secs}`
-      : dayClock
+    : '—'
+  const closesClock = closes
+    ? `${closes.hours}:${closes.mins}:${closes.secs}`
+    : '—:—:—'
 
   function handlePick(side: PredictionSide) {
     setPickedSide(side)
     setErrorMsg(null)
   }
 
-  async function handleLiveSubmit() {
+  async function handleSubmit() {
     if (!pickedSide || !slug) return
     setErrorMsg(null)
     try {
@@ -129,16 +121,6 @@ export default function MarketCard() {
     }
   }
 
-  function handleDemoSubmit() {
-    if (!phone.trim()) return
-    const num = 18000 + Math.floor(Math.random() * 900)
-    const rank = 2000 + Math.floor(Math.random() * 400)
-    setDemoFounderNumber(`#${num.toLocaleString()}`)
-    setDemoFounderRank(`#${rank.toLocaleString()}`)
-    setDemoReferLink(`santibet.ng/r/${num}`)
-    setStage('done')
-  }
-
   async function handleResendCode() {
     setErrorMsg(null)
     try {
@@ -149,29 +131,15 @@ export default function MarketCard() {
     }
   }
 
-  function handlePrimarySubmit() {
-    if (isLive) {
-      handleLiveSubmit()
-    } else {
-      handleDemoSubmit()
-    }
-  }
-
-  const referLink = isLive
-    ? standing
+  const referLink =
+    standing && typeof window !== 'undefined'
       ? `${window.location.origin}/?ref=${standing.referralCode}`
       : ''
-    : demoReferLink
-  const founderNumber = isLive
-    ? standing
-      ? `#${standing.participantNumber.toLocaleString()}`
-      : ''
-    : demoFounderNumber
-  const founderRank = isLive
-    ? standing?.rank != null
-      ? `#${standing.rank.toLocaleString()}`
-      : '—'
-    : demoFounderRank
+  const founderNumber = standing
+    ? `#${standing.participantNumber.toLocaleString()}`
+    : ''
+  const founderRank =
+    standing?.rank != null ? `#${standing.rank.toLocaleString()}` : '—'
 
   async function handleCopy() {
     try {
@@ -184,6 +152,8 @@ export default function MarketCard() {
   }
 
   const submitting = predictMutation.isPending || confirmMutation.isPending
+
+  const loading = campaignLoading || (Boolean(slug) && questionLoading)
 
   return (
     <div className='mx-auto max-w-140'>
@@ -201,13 +171,26 @@ export default function MarketCard() {
         <span className='absolute -top-3 -right-3 h-6 w-6 rounded-full bg-white' />
 
         <div className='rounded-b-2xl border border-t-0 border-dashed border-border bg-plain'>
-          {!submitted ? (
+          {loading ? (
+            <div className='px-7.5 pt-8.5 pb-8.5 text-center text-sm text-neutral-10'>
+              Loading today&apos;s market…
+            </div>
+          ) : !slug || todayQuestionError ? (
+            <div className='px-7.5 pt-8.5 pb-8.5 text-center'>
+              <div className='mb-2 font-display text-[22px] font-bold text-black'>
+                No market open right now
+              </div>
+              <div className='text-sm text-placeholder'>
+                Check back soon — a new question opens every campaign day.
+              </div>
+            </div>
+          ) : !submitted ? (
             <div className='px-7.5 pt-8.5 pb-6.5'>
               <div className='mb-3.5  text-sm font-semibold text-success '>
                 Today&apos;s Market
               </div>
               <div className='mb-5.5 font-display text-[32px] leading-8 font-bold text-black'>
-                {questionText}
+                {todayQuestion!.text}
               </div>
 
               <div className='mb-5 flex gap-3'>
@@ -223,11 +206,12 @@ export default function MarketCard() {
                 >
                   <div
                     className='absolute top-0 bottom-0 left-0 z-0 bg-success/[0.12]'
-                    style={{ width: `${yesPercent}%` }}
+                    style={{ width: `${yesPercent ?? 0}%` }}
                   />
                   <span className='relative z-10 block'>YES</span>
                   <span className='relative z-10 mt-1 block  text-[13px] text-neutral-10'>
-                    {yesPercent}% of predictions
+                    {yesPercentLabel}
+                    {yesPercent != null && ' of predictions'}
                   </span>
                 </button>
                 <button
@@ -242,11 +226,12 @@ export default function MarketCard() {
                 >
                   <div
                     className='absolute top-0 bottom-0 left-0 z-0 bg-error/[0.12]'
-                    style={{ width: `${noPercent}%` }}
+                    style={{ width: `${noPercent ?? 0}%` }}
                   />
                   <span className='relative z-10 block'>NO</span>
                   <span className='relative z-10 mt-1 block  text-[13px] text-neutral-10'>
-                    {noPercent}% of predictions
+                    {noPercentLabel}
+                    {noPercent != null && ' of predictions'}
                   </span>
                 </button>
               </div>
@@ -303,7 +288,7 @@ export default function MarketCard() {
                     )}
                     <button
                       type='button'
-                      onClick={handlePrimarySubmit}
+                      onClick={handleSubmit}
                       disabled={!canSubmit || submitting}
                       className={`rounded-lg px-6 py-3.25 font-bold transition-colors ${
                         canSubmit && !submitting
@@ -423,8 +408,8 @@ export default function MarketCard() {
                 Come back after midnight for today&apos;s result.
               </div>
               <div className='inline-flex items-center gap-2.5 rounded-full bg-white px-4.5 py-2.5  text-[13px] text-neutral-10'>
-                Tomorrow&apos;s prediction unlocks in{' '}
-                <b className='text-[15px] text-black'>{dayClock}</b>
+                Today&apos;s window closes in{' '}
+                <b className='text-[15px] text-black'>{closesClock}</b>
               </div>
 
               <div className='mt-5.5 border-t border-dashed border-border pt-5 text-left'>
