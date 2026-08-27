@@ -10,7 +10,6 @@ export default function FounderProgram() {
           title='Level up before launch'
           subtitle='Every prediction earns points. Climb the ladder to unlock bigger rewards at launch.'
         />
-
         {/* Level ladder */}
         {/* <div className='relative mx-auto max-w-225'>
           <div className='pointer-events-none absolute top-[22px] right-8 left-8 hidden border-t border-dashed border-border sm:block' />
