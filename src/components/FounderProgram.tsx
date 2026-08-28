@@ -1,7 +1,24 @@
-import { founderBenefits, founderLevels } from '../utils/data'
+'use client'
+
+import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
+import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
+
+const LEVEL_ICON: Record<string, string> = {
+  rookie: '🥉',
+  rising: '🥈',
+  pro: '🥇',
+  elite: '💎',
+  legend: '👑',
+}
 
 export default function FounderProgram() {
+  const { activeCampaign } = useActiveCampaign()
+  const { data: rules } = useCampaignRules(activeCampaign?.slug)
+  const levels = rules?.levels
+    .slice()
+    .sort((a, b) => a.minPoints - b.minPoints)
+
   return (
     <section id='founder' className='scroll-mt-24 py-16'>
       <div className='mx-auto max-w-270 px-6'>
@@ -11,27 +28,29 @@ export default function FounderProgram() {
           subtitle='Every prediction earns points. Climb the ladder to unlock bigger rewards at launch.'
         />
         {/* Level ladder */}
-        {/* <div className='relative mx-auto max-w-225'>
-          <div className='pointer-events-none absolute top-[22px] right-8 left-8 hidden border-t border-dashed border-border sm:block' />
-          <div className='flex gap-7 overflow-x-auto pb-2 sm:justify-between sm:overflow-visible'>
-            {founderLevels.map((level) => (
-              <div
-                key={level.name}
-                className='flex shrink-0 flex-col items-center gap-2 text-center'
-              >
-                <div className='relative z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-border bg-white text-[20px]'>
-                  {level.icon}
+        {levels && levels.length > 0 && (
+          <div className='relative mx-auto max-w-225'>
+            <div className='pointer-events-none absolute top-5.5 right-8 left-8 hidden border-t border-dashed border-border sm:block' />
+            <div className='flex gap-7 overflow-x-auto pb-2 sm:justify-between sm:overflow-visible'>
+              {levels.map((level) => (
+                <div
+                  key={level.key}
+                  className='flex shrink-0 flex-col items-center gap-2 text-center'
+                >
+                  <div className='relative z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-border bg-white text-[20px]'>
+                    {LEVEL_ICON[level.key] ?? '⭐'}
+                  </div>
+                  <div className='font-display text-sm font-bold text-black uppercase'>
+                    {level.name}
+                  </div>
+                  <div className=' text-[10px] text-neutral-10'>
+                    {level.minPoints}+ pts
+                  </div>
                 </div>
-                <div className='font-display text-sm font-bold text-black uppercase'>
-                  {level.name}
-                </div>
-                <div className=' text-[10px] text-neutral-10'>
-                  {level.points}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div> */}
+        )}
 
         {/* Benefits checklist */}
         <div className='mx-auto mt-11 max-w-190'>

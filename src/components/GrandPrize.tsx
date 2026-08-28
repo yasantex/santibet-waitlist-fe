@@ -2,12 +2,8 @@
 
 import SectionHead from './SectionHead'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import type { Money, PrizeTierRule } from '../types/campaign'
-
-function formatMoney(money: Money) {
-  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
-  return `${prefix}${Number(money.amount).toLocaleString()}`
-}
+import { formatMoney } from '../utils/money'
+import type { PrizeTierRule } from '../types/campaign'
 
 function tierSub(tier: PrizeTierRule) {
   const kindLabel =

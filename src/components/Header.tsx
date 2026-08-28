@@ -2,7 +2,7 @@ import Image from 'next/image'
 
 const navLinks = [
   { href: '#how', label: 'How it works' },
-  { href: '#grand', label: 'Prizes' },
+  { href: '#prizes', label: 'Prizes' },
   { href: '#leaderboard', label: 'Leaderboard' },
   { href: '#refer', label: 'Refer' },
 ]

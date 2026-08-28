@@ -12,12 +12,6 @@ export interface ReferStep {
   sub: string;
 }
 
-export interface FounderLevel {
-  icon: string;
-  name: string;
-  points: string;
-}
-
 export interface FounderBenefit {
   icon: string;
   text: string;

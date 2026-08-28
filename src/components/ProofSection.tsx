@@ -6,12 +6,8 @@ import {
   useCampaignActivity,
   // usePreviousQuestion,
 } from '../hooks/useCampaign'
-import type { ActivityItem, Money } from '../types/campaign'
-
-function formatMoney(money: Money) {
-  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
-  return `${prefix}${Number(money.amount).toLocaleString()}`
-}
+import { formatMoney } from '../utils/money'
+import type { ActivityItem } from '../types/campaign'
 
 function activityHtml(item: ActivityItem) {
   switch (item.type) {

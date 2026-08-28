@@ -15,12 +15,7 @@ import {
 import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import { setStanding } from '../redux/campaignSlice'
-import type { Money } from '../types/campaign'
-
-function formatMoney(money: Money) {
-  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
-  return `${prefix}${Number(money.amount).toLocaleString()}`
-}
+import { formatMoney } from '../utils/money'
 
 type Stage = 'pick' | 'phone' | 'code' | 'done'
 
@@ -290,7 +285,7 @@ export default function MarketCard() {
                       type='button'
                       onClick={handleSubmit}
                       disabled={!canSubmit || submitting}
-                      className={`rounded-lg px-6 py-3.25 font-bold transition-colors ${
+                      className={`rounded-lg px-6 py-3.25 cursor-pointer font-bold transition-colors ${
                         canSubmit && !submitting
                           ? 'bg-brand-green text-black'
                           : 'cursor-not-allowed bg-border text-neutral-10'
@@ -337,7 +332,7 @@ export default function MarketCard() {
                       type='button'
                       onClick={handleConfirmCode}
                       disabled={code.trim().length !== 6 || submitting}
-                      className={`rounded-lg px-6 py-3.25 font-bold transition-colors ${
+                      className={`rounded-lg px-6 py-3.25 font-bold transition-colors cursor-pointer ${
                         code.trim().length === 6 && !submitting
                           ? 'bg-brand-green text-black'
                           : 'cursor-not-allowed bg-border text-neutral-10'
@@ -355,7 +350,7 @@ export default function MarketCard() {
                     type='button'
                     onClick={handleResendCode}
                     disabled={resendMutation.isPending}
-                    className='mt-2.5 text-[12px] font-medium text-neutral-10 underline underline-offset-2'
+                    className='mt-2.5 text-[12px] cursor-pointer font-medium text-neutral-10 underline underline-offset-2'
                   >
                     {resendMutation.isPending ? 'Resending…' : "Didn't get it? Resend code"}
                   </button>
@@ -428,7 +423,7 @@ export default function MarketCard() {
                   <button
                     type='button'
                     onClick={handleCopy}
-                    className='rounded-lg bg-brand-green px-6 py-3.25 font-bold text-black'
+                    className='rounded-lg cursor-pointer bg-brand-green px-6 py-3.25 font-bold text-black'
                   >
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
