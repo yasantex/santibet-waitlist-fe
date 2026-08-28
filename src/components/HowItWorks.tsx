@@ -7,24 +7,49 @@ export default function HowItWorks() {
       <div className='mx-auto max-w-270 px-6'>
         <SectionHead
           kicker='How it works'
-          title="From today's call to launch day"
+          title={
+            <>
+              Five stages.
+              <br />
+              One big finish.
+            </>
+          }
+          subtitle='Small wins today, a legacy rank by launch. Every correct call moves the needle.'
         />
-        <div className='mx-auto max-w-100'>
+        <div className='mx-auto flex max-w-100 md:max-w-none flex-col gap-2.5 md:grid md:grid-cols-5'>
           {journeySteps.map((step, i) => (
-            <div key={step.when} className='fle items-center justify-center text-center gap-4'>
+            <div
+              key={step.when}
+              className={`flex items-center md:flex-col md:items-start gap-3.5 md:gap-2.5 rounded-2xl border px-4.5 py-4 md:px-5 md:py-5 ${
+                step.final
+                  ? 'border-dark bg-dark dark:border-lime dark:bg-lime'
+                  : 'border-border bg-surface'
+              }`}
+            >
               <div
-                className={`mb-5 flex-1 rounded-xl px-5.5 py-5 ${
-                  step.final ? 'bg-surface-success' : 'bg-plain'
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                  step.final
+                    ? 'bg-lime text-lime-ink dark:bg-lime-ink dark:text-lime'
+                    : 'bg-dark text-lime dark:border dark:border-border dark:bg-surface-2'
                 }`}
               >
+                {i + 1}
+              </div>
+              <div>
                 <div
-                  className={`mb-1 text-sm tracking-wide ${
-                    step.final ? 'text-market-success' : 'text-success'
+                  className={`mb-0.5 text-[10.5px] font-bold uppercase tracking-[0.06em] ${
+                    step.final
+                      ? 'text-lime dark:text-lime-ink'
+                      : 'text-success'
                   }`}
                 >
                   {step.when}
                 </div>
-                <div className='font-display text-[19px] font-bold text-black'>
+                <div
+                  className={`font-display text-[15.5px] font-black ${
+                    step.final ? 'text-white dark:text-lime-ink' : 'text-ink'
+                  }`}
+                >
                   {step.what}
                 </div>
               </div>
