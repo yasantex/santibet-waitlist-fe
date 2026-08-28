@@ -2,14 +2,15 @@
 
 import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
+import { Icon, type IconName } from './icons'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
 
-const LEVEL_ICON: Record<string, string> = {
-  rookie: '🥉',
-  rising: '🥈',
-  pro: '🥇',
-  elite: '💎',
-  legend: '👑',
+const LEVEL_ICON: Record<string, IconName> = {
+  rookie: 'badge',
+  rising: 'star',
+  pro: 'trophy',
+  elite: 'shield',
+  legend: 'crown',
 }
 
 export default function FounderProgram() {
@@ -34,22 +35,34 @@ export default function FounderProgram() {
         {levels && levels.length > 0 && (
           <div className='relative mx-auto max-w-190'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-2.5 lg:grid-cols-3'>
-              {levels.map((level) => (
-                <div
-                  key={level.key}
-                  className='flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center'
-                >
-                  <div className='text-[24px]'>
-                    {LEVEL_ICON[level.key] ?? '⭐'}
+              {levels.map((level) => {
+                const isTop = level.key === 'legend'
+                return (
+                  <div
+                    key={level.key}
+                    className='flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center'
+                  >
+                    <div
+                      className={`flex h-13 w-13 items-center justify-center rounded-full ${
+                        isTop
+                          ? 'bg-lime text-lime-ink'
+                          : 'bg-surface-2 text-dark dark:text-lime'
+                      }`}
+                    >
+                      <Icon
+                        name={LEVEL_ICON[level.key] ?? 'star'}
+                        className='h-5.5 w-5.5'
+                      />
+                    </div>
+                    <div className='font-display text-[11px] font-bold text-ink uppercase leading-tight px-1'>
+                      {level.name}
+                    </div>
+                    <div className='text-sm font-semibold text-muted'>
+                      {level.minPoints}+ pts
+                    </div>
                   </div>
-                  <div className='font-display text-[11px] font-bold text-ink uppercase leading-tight px-1'>
-                    {level.name}
-                  </div>
-                  <div className='text-sm font-semibold text-muted'>
-                    {level.minPoints}+ pts
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -62,9 +75,12 @@ export default function FounderProgram() {
             {founderBenefits.map((benefit) => (
               <div
                 key={benefit.text}
-                className='flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-3.25'
+                className='flex flex-col items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3.25'
               >
-                <span className='text-[18px]'>{benefit.icon}</span>
+                <Icon
+                  name={benefit.icon}
+                  className='h-5 w-5 text-dark dark:text-lime'
+                />
                 <span className='text-sm text-center font-bold text-ink'>
                   {benefit.text}
                 </span>
