@@ -30,8 +30,8 @@ function tierLine(tier: PrizeTierRule) {
 function PeriodCard({ period }: { period: PrizePeriodRules }) {
   const tiers = period.tiers.slice().sort((a, b) => a.place - b.place)
   return (
-    <div className='flex flex-col w-full rounded-2xl border border-dashed border-border bg-plain p-6'>
-      <div className='mb-4 text-xs font-bold tracking-[2px] text-success uppercase'>
+    <div className='flex flex-col w-full rounded-2xl border border-border bg-surface p-6'>
+      <div className='mb-4 text-xs font-black tracking-[0.08em] text-success uppercase'>
         {PERIOD_LABEL[period.period]}
       </div>
       <div className='flex flex-1 flex-col gap-3.5'>
@@ -41,14 +41,14 @@ function PeriodCard({ period }: { period: PrizePeriodRules }) {
             className='flex items-center justify-between gap-4 border-b border-border pb-3.5 last:border-b-0 last:pb-0'
           >
             <div>
-              <div className='font-display text-sm font-bold text-black'>
+              <div className='font-display text-lg font-black text-ink'>
                 {tier.name}
               </div>
-              <div className='mt-0.5 text-[12.5px] text-placeholder'>
+              <div className='mt-0.5 text-[16.5px] text-muted'>
                 {tierLine(tier)}
               </div>
             </div>
-            <div className='shrink-0 text-right text-xs font-semibold text-neutral-10'>
+            <div className='shrink-0 text-right text-sm font-bold text-dark'>
               {tier.winnerCount} winner{tier.winnerCount > 1 ? 's' : ''}
             </div>
           </div>
@@ -66,12 +66,18 @@ export default function PrizesSection() {
   return (
       <div id='prizes' className='flex flex-col items-center justify-center py-16 mx-auto px-6 max-w-250'>
         <SectionHead
-          kicker='Prizes to be won'
-          title='Win daily and weekly'
-          subtitle='Every correct prediction stacks toward daily and weekly rewards — plus an entry into the launch-day grand prize.'
+          kicker='Rewards'
+          title={
+            <>
+              Small stakes.
+              <br />
+              Real wins.
+            </>
+          }
+          subtitle="You don't need launch day to start winning — daily and weekly payouts are already running."
         />
         {!periods ? (
-          <div className='py-6 text-center text-sm text-neutral-10'>
+          <div className='py-6 text-center text-lg text-neutral-10'>
             Loading prize table…
           </div>
         ) : (

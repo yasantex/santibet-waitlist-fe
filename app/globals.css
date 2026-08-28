@@ -1,43 +1,71 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   color-scheme: light;
-  --background: #ffffff;
+  --background: #fafbf8;
   --gradient: #f0f2fa;
   --white: #ffffff;
-  --black: #000000;
-  --foreground: #171717;
+  --black: #0b1f17;
+  --foreground: #0b1f17;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #06120d;
+  --black: #f4f7f3;
+  --foreground: #f4f7f3;
 }
 
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-track: #a4a4a4;
-  --color-plain: #f0f0f0;
+  --color-plain: #ffffff;
   --color-surface-base: #ddf1e4;
-  --color-black: #000000;
-  --color-text-black: #000000;
-  --color-neutral-10: #9aa09c;
+  --color-black: var(--black);
+  --color-text-black: var(--black);
+  --color-dark: #003326;
+  --color-dark-2: #04473a;
+  --color-lime: #bffa00;
+  --color-lime-ink: #10230a;
+  --color-paper: var(--background);
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f1ee;
+  --color-muted: #4b5a52;
+  --color-neutral-10: #7c8b82;
   --font-outfit: 'Outfit', sans-serif;
   --color-error: #ef4444;
   --color-error-bg: #ffeded;
   --color-surface-error: #fff2f2;
   --color-border-error: #ff2e2e;
-  --color-border: #e4e5e3;
+  --color-border: #e4e8e0;
   --color-hover: #eaeaea;
   --color-surface-hover: #9aa09c;
-  --color-success: #238b45;
+  --color-success: #16a34a;
   --color-surface-success: #eefcf3;
-  --color-brand-green: #c6f135;
-  --color-card: #e4e5e3;
+  --color-brand-green: #bffa00;
+  --color-card: #e4e8e0;
   --color-warning: #ff8000;
   --color-success-bg: #eefcf3;
-  --color-glass: #e4e5e3;
-  --color-placeholder: #6b706d;
+  --color-glass: #e4e8e0;
+  --color-placeholder: #4b5a52;
   --color-market-success: #183123;
   --color-market-error: #341f20;
   --font-display: var(--font-outfit), sans-serif;
   --font-body: var(--font-outfit), sans-serif;
+}
+
+.dark {
+  --color-surface: #0e1f17;
+  --color-surface-2: #132a1f;
+  --color-muted: #8fa398;
+  --color-dark: #8fa398;
+  --color-neutral-10: #6f8177;
+  --color-border: #1d3a2c;
+  --color-success: #4ade80;
+  --color-placeholder: #8fa398;
 }
 
 html {
@@ -98,8 +126,27 @@ input:focus-visible {
   }
 }
 
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .animate-pulse-dot {
   animation: pulse 2s infinite;
+}
+
+.animate-ticker {
+  animation: ticker 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation: none;
+  }
 }
 
 .animate-feed-in {

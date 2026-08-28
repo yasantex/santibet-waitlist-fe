@@ -4,10 +4,18 @@ import SectionHead from './SectionHead'
 import {
   useActiveCampaign,
   useCampaignActivity,
-  // usePreviousQuestion,
+  usePreviousQuestion,
 } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
 import type { ActivityItem } from '../types/campaign'
+
+function formatResolvedDate(iso: string | null) {
+  if (!iso) return null
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(iso))
+}
 
 function activityHtml(item: ActivityItem) {
   switch (item.type) {
@@ -28,49 +36,110 @@ export default function ProofSection() {
     activeCampaign?.slug,
     5,
   )
-  // const {
-  //   data: previous,
-  //   isLoading: previousLoading,
-  //   isError: previousError,
-  // } = usePreviousQuestion(activeCampaign?.slug)
+  const {
+    data: previous,
+    isLoading: previousLoading,
+    isError: previousError,
+  } = usePreviousQuestion(activeCampaign?.slug)
 
   const feedItems = activity?.data ?? []
-  // const hasPrevious = Boolean(previous) && !previousError
+  const hasPrevious = Boolean(previous) && !previousError
 
   return (
     <section id='proof' className='scroll-mt-24 py-16'>
       <div className='mx-auto max-w-270 px-6'>
         <SectionHead
           kicker='Right now'
-          title="It's already happening"
-          subtitle='Live predictions and real payouts — updated every day, not just at launch.'
+          title={
+            <>
+              Nobody&apos;s waiting
+              <br />
+              for launch day.
+            </>
+          }
+          subtitle='Real people, real calls, real payouts — happening on the app every single day.'
         />
 
           {/* Live activity panel */}
-          <div className='overflow-hidden rounded-xl max-w-110 mx-auto bg-plain'>
-            <div className='flex items-center gap-2 border-b border-dashed border-border px-5.5 py-3.5'>
+          <div className='overflow-hidden rounded-xl max-w-110 mx-auto border border-border bg-surface'>
+            <div className='flex items-center gap-2 border-b border-border px-5.5 py-3.5'>
               <span className='h-1.75 w-1.75 rounded-full bg-success' />
-              <span className='text-xs  text-neutral-10'>Live activity</span>
+              <span className='text-sm font-bold text-ink'>
+                On the ground right now
+              </span>
             </div>
             {activityLoading ? (
-              <div className='px-5.5 py-6 text-sm text-neutral-10'>
+              <div className='px-5.5 py-6 text-lg text-neutral-10'>
                 Loading activity…
               </div>
             ) : feedItems.length === 0 ? (
-              <div className='px-5.5 py-6 text-sm text-neutral-10'>
+              <div className='px-5.5 py-6 text-lg text-neutral-10'>
                 Nothing yet — be the first to make a move.
               </div>
             ) : (
               feedItems.map((item, i) => (
                 <div
                   key={i}
-                  className='animate-feed-in flex items-center gap-3 border-b border-border px-5.5 py-3.5 text-sm text-placeholder last:border-b-0 [&_strong]:text-black'
+                  className='animate-feed-in flex items-center gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0 [&_strong]:text-ink'
                   dangerouslySetInnerHTML={{ __html: activityHtml(item) }}
                 />
               ))
             )}
           </div>
 
+          {/* Previous question, resolved */}
+          {previousLoading ? (
+            <div className='mx-auto mt-4 max-w-110 rounded-2xl bg-dark px-5.5 py-5 text-center text-white/70 dark:border dark:border-border dark:bg-surface-2 dark:text-muted'>
+              Loading previous result…
+            </div>
+          ) : (
+            hasPrevious &&
+            previous && (
+              <div className='mx-auto mt-4 max-w-110 overflow-hidden rounded-2xl bg-dark px-5.5 py-5 text-white dark:border dark:border-border dark:bg-surface-2 dark:text-ink'>
+                <div className='mb-2 flex items-start justify-between gap-3'>
+                  <span className='text-[10px] font-bold uppercase tracking-[0.06em] text-white/55 dark:text-muted'>
+                    Day {previous.campaignDay}
+                  </span>
+                  <span className='shrink-0 rounded-full bg-lime px-2.5 py-1 text-[10px] font-black uppercase text-lime-ink'>
+                    {previous.status === 'VOID' ? 'Voided' : 'Resolved'}
+                  </span>
+                </div>
+                <div className='mb-4 font-display text-[17px] font-black leading-snug'>
+                  {previous.text}
+                </div>
+                <div className='grid grid-cols-2 gap-3.5'>
+                  <div>
+                    <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
+                      Correct Answer
+                    </div>
+                    <div className='text-lg font-black text-lime'>
+                      {previous.status === 'VOID'
+                        ? '—'
+                        : (previous.outcome ?? '—')}
+                    </div>
+                  </div>
+                  <div>
+                    <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
+                      Resolved
+                    </div>
+                    <div className='text-lg font-black text-lime'>
+                      {formatResolvedDate(previous.resolvedAt) ?? '—'}
+                    </div>
+                  </div>
+                </div>
+                {previous.evidenceUrl && (
+                  <a
+                    href={previous.evidenceUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='mt-4 inline-block text-xs font-bold text-white/70 underline underline-offset-2 dark:text-muted'
+                  >
+                    View evidence
+                  </a>
+                )}
+              </div>
+            )
+          )}
 
       </div>
     </section>
