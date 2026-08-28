@@ -1,9 +1,4 @@
-import type {
-  FounderBenefit,
-  FounderLevel,
-  JourneyStep,
-  ReferStep,
-} from './types'
+import type { FounderBenefit, JourneyStep, ReferStep } from './types'
 
 export const journeySteps: JourneyStep[] = [
   { when: 'Today', what: 'Win airtime' },
@@ -29,14 +24,6 @@ export const referSteps: ReferStep[] = [
     what: 'You both earn',
     sub: '+5 Founder points each, plus a jump up the leaderboard.',
   },
-]
-
-export const founderLevels: FounderLevel[] = [
-  { icon: '🥉', name: 'Bronze', points: '5 points' },
-  { icon: '🥈', name: 'Silver', points: '15 points' },
-  { icon: '🥇', name: 'Gold', points: '30 points' },
-  { icon: '💎', name: 'Diamond', points: '60 points' },
-  { icon: '👑', name: 'Legend', points: '100 points' },
 ]
 
 export const founderBenefits: FounderBenefit[] = [

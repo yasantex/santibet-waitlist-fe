@@ -6,6 +6,7 @@ import Hero from "@/src/components/Hero";
 import HowItWorks from "@/src/components/HowItWorks";
 import Leaderboard from "@/src/components/Leaderboard";
 import MarketSection from "@/src/components/MarketSection";
+import PrizesSection from "@/src/components/PrizesSection";
 import ProofSection from "@/src/components/ProofSection";
 import ReferFriend from "@/src/components/ReferFriend";
 
@@ -17,6 +18,7 @@ export default function Home() {
       <HowItWorks />
       <MarketSection />
       <ProofSection />
+      <PrizesSection />
       <GrandPrize />
       <Leaderboard />
       <FounderProgram />

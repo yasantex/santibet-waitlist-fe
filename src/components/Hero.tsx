@@ -2,17 +2,14 @@
 
 import CountdownTimer from './CountdownTimer'
 import { useActiveCampaign, useCampaignStats } from '../hooks/useCampaign'
+import { formatMoney } from '../utils/money'
 
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
 
   const prizePool = stats?.dailyPrizePool?.[0]
-  const prizePoolLabel = prizePool
-    ? `${prizePool.currency === 'NGN' ? '₦' : prizePool.currency + ' '}${Number(
-        prizePool.amount,
-      ).toLocaleString()}`
-    : '—'
+  const prizePoolLabel = prizePool ? formatMoney(prizePool) : '—'
   const predictedLabel = (
     stats?.today?.predictions ?? stats?.totalPredictions ?? 0
   ).toLocaleString()

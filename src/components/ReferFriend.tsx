@@ -3,12 +3,8 @@
 import { referSteps } from '../utils/data'
 import SectionHead from './SectionHead'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import type { Money, ReferralMilestone } from '../types/campaign'
-
-function formatMoney(money: Money) {
-  const prefix = money.currency === 'NGN' ? '₦' : `${money.currency} `
-  return `${prefix}${Number(money.amount).toLocaleString()}`
-}
+import { formatMoney } from '../utils/money'
+import type { ReferralMilestone } from '../types/campaign'
 
 function milestoneReward(m: ReferralMilestone) {
   const parts: string[] = []
