@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PredictionSide } from '../utils/types'
 import {
   getApiErrorMessage,
@@ -18,6 +18,58 @@ import { setStanding } from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
 
 type Stage = 'pick' | 'phone' | 'code' | 'done'
+
+const CODE_LENGTH = 6
+const STAGE_ORDER: Stage[] = ['pick', 'phone', 'code', 'done']
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      className='h-6 w-6'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={2.5}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+    >
+      <path d='m4 12 6 6L20 6' />
+    </svg>
+  )
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      className='h-4 w-4'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={1.8}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+    >
+      <path d='M4 20l1.4-4.2A8 8 0 1 1 9 18.5L4 20Z' />
+      <path d='M8.5 9.3c0 3.1 2.5 5.6 5.6 5.6' />
+    </svg>
+  )
+}
+
+function StepProgress({ stage }: { stage: Stage }) {
+  const currentIndex = STAGE_ORDER.indexOf(stage)
+  return (
+    <div className='flex gap-1.5 px-7.5 pt-4'>
+      {STAGE_ORDER.map((s, i) => (
+        <div
+          key={s}
+          className={`h-1 flex-1 rounded-full ${
+            i <= currentIndex ? 'bg-lime' : 'bg-border'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function MarketCard() {
   const dispatch = useAppDispatch()
@@ -54,6 +106,8 @@ export default function MarketCard() {
       : (new URLSearchParams(window.location.search).get('ref') ?? undefined),
   )
 
+  const codeBoxRefs = useRef<Array<HTMLInputElement | null>>([])
+
   useEffect(() => {
     if (meData) dispatch(setStanding(meData))
   }, [meData, dispatch])
@@ -66,15 +120,19 @@ export default function MarketCard() {
     return () => clearInterval(id)
   }, [resendCooldown])
 
-  const submitted = stage === 'done'
+  useEffect(() => {
+    if (stage === 'code') codeBoxRefs.current[0]?.focus()
+  }, [stage])
+
   const showPhoneStep = !knownReturningPlayer
   const canSubmit = knownReturningPlayer || phone.trim().length > 0
 
   const yesPercent = stats?.today?.yesPercent
-  const noPercent =
-    yesPercent != null ? 100 - yesPercent : undefined
-  const yesPercentLabel = yesPercent != null ? `${yesPercent}%` : 'No predictions yet'
-  const noPercentLabel = noPercent != null ? `${noPercent}%` : 'No predictions yet'
+  const noPercent = yesPercent != null ? 100 - yesPercent : undefined
+  const yesPercentLabel =
+    yesPercent != null ? `${yesPercent}%` : 'No predictions yet'
+  const noPercentLabel =
+    noPercent != null ? `${noPercent}%` : 'No predictions yet'
   const alreadyPredicted = (
     stats?.today?.predictions ?? stats?.totalPredictions ?? 0
   ).toLocaleString()
@@ -88,6 +146,7 @@ export default function MarketCard() {
   function handlePick(side: PredictionSide) {
     setPickedSide(side)
     setErrorMsg(null)
+    setStage('phone')
   }
 
   async function handleSubmit() {
@@ -107,12 +166,14 @@ export default function MarketCard() {
         setStage('done')
       }
     } catch (err) {
-      setErrorMsg(getApiErrorMessage(err, 'Something went wrong. Please try again.'))
+      setErrorMsg(
+        getApiErrorMessage(err, 'Something went wrong. Please try again.'),
+      )
     }
   }
 
   async function handleConfirmCode() {
-    if (code.trim().length !== 6) return
+    if (code.trim().length !== CODE_LENGTH) return
     setErrorMsg(null)
     try {
       const result = await confirmMutation.mutateAsync({
@@ -122,7 +183,9 @@ export default function MarketCard() {
       dispatch(setStanding(result))
       setStage('done')
     } catch (err) {
-      setErrorMsg(getApiErrorMessage(err, 'That code is invalid or has expired.'))
+      setErrorMsg(
+        getApiErrorMessage(err, 'That code is invalid or has expired.'),
+      )
     }
   }
 
@@ -134,8 +197,46 @@ export default function MarketCard() {
       setDestination(result.destination)
       setResendCooldown(60)
     } catch (err) {
-      setErrorMsg(getApiErrorMessage(err, 'Could not resend the code — try again shortly.'))
+      setErrorMsg(
+        getApiErrorMessage(
+          err,
+          'Could not resend the code — try again shortly.',
+        ),
+      )
     }
+  }
+
+  function handleCodeBoxChange(index: number, raw: string) {
+    const char = raw.replace(/\D/g, '').slice(-1)
+    const next = (code.slice(0, index) + char + code.slice(index + 1)).slice(
+      0,
+      CODE_LENGTH,
+    )
+    setCode(next)
+    if (char && index < CODE_LENGTH - 1) {
+      codeBoxRefs.current[index + 1]?.focus()
+    }
+  }
+
+  function handleCodeBoxKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      codeBoxRefs.current[index - 1]?.focus()
+      setCode(code.slice(0, index - 1) + code.slice(index))
+    }
+  }
+
+  function handleCodePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, CODE_LENGTH)
+    if (!pasted) return
+    e.preventDefault()
+    setCode(pasted)
+    codeBoxRefs.current[Math.min(pasted.length, CODE_LENGTH - 1)]?.focus()
   }
 
   const referLink =
@@ -147,6 +248,11 @@ export default function MarketCard() {
     : ''
   const founderRank =
     standing?.rank != null ? `#${standing.rank.toLocaleString()}` : '—'
+  const whatsappHref = referLink
+    ? `https://wa.me/?text=${encodeURIComponent(
+        `I just made my SantiBet prediction — join me and we both earn Founder points: ${referLink}`,
+      )}`
+    : undefined
 
   async function handleCopy() {
     try {
@@ -194,173 +300,194 @@ export default function MarketCard() {
                 Check back soon — a new question opens every campaign day.
               </div>
             </div>
-          ) : !submitted ? (
-            <div className='px-7.5 pt-8.5 pb-6.5'>
-              <div className='mb-3.5 text-xs font-bold uppercase tracking-[0.05em] text-success'>
-                Make Today&apos;s Call
-              </div>
-              <div className='mb-5.5 font-display text-[26px] leading-8 font-black text-ink'>
-                {todayQuestion!.text}
-              </div>
+          ) : (
+            <>
+              <StepProgress stage={stage} />
 
-              <div className='mb-5 flex md:flex-row flex-col gap-3'>
-                <button
-                  type='button'
-                  onClick={() => handlePick('yes')}
-                  aria-pressed={pickedSide === 'yes'}
-                  className={`relative flex-1 overflow-hidden rounded-xl px-3.5 py-4 text-left text-[19px] font-black transition-colors ${
-                    pickedSide === 'yes'
-                      ? 'border-2 border-dark bg-lime text-lime-ink dark:border-lime-ink'
-                      : 'border-2 border-border bg-surface text-ink'
-                  }`}
-                >
-                  <span className='relative z-10 block'>YES</span>
-                  <span className='relative z-10 mt-1 block text-[13px] font-semibold text-muted'>
-                    {yesPercentLabel}
-                    {yesPercent != null && ' of predictions'}
-                  </span>
-                </button>
-                <button
-                  type='button'
-                  onClick={() => handlePick('no')}
-                  aria-pressed={pickedSide === 'no'}
-                  className={`relative flex-1 overflow-hidden rounded-xl px-3.5 py-4 text-left font-display text-[19px] font-black tracking-wide transition-colors ${
-                    pickedSide === 'no'
-                      ? 'border-2 border-dark bg-lime text-lime-ink dark:border-lime-ink'
-                      : 'border-2 border-border bg-surface text-ink'
-                  }`}
-                >
-                  <span className='relative z-10 block'>NO</span>
-                  <span className='relative z-10 mt-1 block text-[13px] font-semibold text-muted'>
-                    {noPercentLabel}
-                    {noPercent != null && ' of predictions'}
-                  </span>
-                </button>
-              </div>
+              {stage === 'pick' && (
+                <div className='px-7.5 pt-5 pb-6.5'>
+                  <div className='mb-3.5 text-xs font-bold uppercase tracking-[0.05em] text-success'>
+                    Make Today&apos;s Call
+                  </div>
+                  <div className='mb-5.5 font-display text-[26px] leading-8 font-black text-ink'>
+                    {todayQuestion!.text}
+                  </div>
 
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-dashed border-border pt-4.5'>
-                <div className='text-center'>
-                  <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                    Closes in
-                  </div>
-                  <div className='text-[15px] font-bold text-success'>
-                    {closesClock}
-                  </div>
-                </div>
-                <div className='text-center'>
-                  <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                    Called by
-                  </div>
-                  <div className='text-[15px] font-bold text-ink'>
-                    {alreadyPredicted}
-                  </div>
-                </div>
-                <div className='text-center'>
-                  <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                    Prize pool today
-                  </div>
-                  <div className='text-[15px] font-bold text-ink'>
-                    {prizePoolLabel}
-                  </div>
-                </div>
-              </div>
-
-              {pickedSide && stage !== 'code' && (
-                <div className='mt-5.5 border-t border-dashed border-border pt-5'>
-                  <div className='mb-3 text-lg text-placeholder'>
-                    Great choice — you predicted{' '}
-                    <strong className='text-ink'>
-                      {pickedSide.toUpperCase()}
-                    </strong>
-                    .{' '}
-                    {showPhoneStep
-                      ? 'Enter your mobile number to lock it in.'
-                      : 'Tap confirm to lock it in.'}
-                  </div>
-                  <div className='flex flex-wrap gap-2.5'>
-                    {showPhoneStep && (
-                      <input
-                        type='tel'
-                        placeholder='Your mobile number'
-                        aria-label='Mobile number'
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className='min-w-45 flex-1 rounded-lg border border-border bg-paper px-4 py-3.25 text-[15px] text-ink placeholder:text-placeholder'
-                      />
-                    )}
+                  <div className='mb-5 flex md:flex-row flex-col gap-3'>
                     <button
                       type='button'
-                      onClick={handleSubmit}
-                      disabled={!canSubmit || submitting}
-                      className={`rounded-lg px-6 py-3.25 cursor-pointer font-bold transition-colors ${
-                        canSubmit && !submitting
-                          ? 'bg-lime text-lime-ink'
-                          : 'cursor-not-allowed bg-border text-neutral-10'
-                      }`}
+                      onClick={() => handlePick('yes')}
+                      aria-pressed={pickedSide === 'yes'}
+                      className='relative flex-1 overflow-hidden rounded-xl border-2 border-dark bg-lime px-3.5 py-4 text-left text-[19px] font-black text-lime-ink transition-colors dark:border-lime-ink'
                     >
-                      {submitting ? 'Submitting…' : 'Confirm prediction'}
+                      <span className='relative z-10 block'>YES</span>
+                      <span className='relative z-10 mt-1 block text-[13px] font-semibold text-lime-ink/70'>
+                        {yesPercentLabel}
+                        {yesPercent != null && ' of predictions'}
+                      </span>
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => handlePick('no')}
+                      aria-pressed={pickedSide === 'no'}
+                      className='relative flex-1 overflow-hidden rounded-xl border-2 border-border bg-surface px-3.5 py-4 text-left font-display text-[19px] font-black tracking-wide text-ink transition-colors'
+                    >
+                      <span className='relative z-10 block'>NO</span>
+                      <span className='relative z-10 mt-1 block text-[13px] font-semibold text-muted'>
+                        {noPercentLabel}
+                        {noPercent != null && ' of predictions'}
+                      </span>
                     </button>
                   </div>
-                  {showPhoneStep && (
-                    <div className='mt-2.5 text-[16px] text-neutral-10'>
-                      We only use this to save your daily prediction — no spam,
-                      ever.
+
+                  <div className='grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-dashed border-border pt-4.5'>
+                    <div className='text-center'>
+                      <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
+                        Closes in
+                      </div>
+                      <div className='text-[15px] font-bold text-success'>
+                        {closesClock}
+                      </div>
                     </div>
+                    <div className='text-center'>
+                      <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
+                        Called by
+                      </div>
+                      <div className='text-[15px] font-bold text-ink'>
+                        {alreadyPredicted}
+                      </div>
+                    </div>
+                    <div className='text-center'>
+                      <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
+                        Prize pool today
+                      </div>
+                      <div className='text-[15px] font-bold text-ink'>
+                        {prizePoolLabel}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {stage === 'phone' && pickedSide && (
+                <div className='px-7.5 pt-5 pb-6.5'>
+                  <div className='mb-4 flex items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 py-3'>
+                    <span className='shrink-0 rounded-lg bg-lime px-2.5 py-1.5 text-xs font-black text-lime-ink'>
+                      {pickedSide.toUpperCase()}
+                    </span>
+                    <span className='text-[12.5px] font-semibold text-ink'>
+                      {showPhoneStep
+                        ? 'Nice call. One step to lock it in.'
+                        : 'Nice call. Tap confirm to lock it in.'}
+                    </span>
+                  </div>
+
+                  {showPhoneStep && (
+                    <>
+                      <div className='mb-2 text-xs font-bold text-muted'>
+                        Your mobile number
+                      </div>
+                      <div className='mb-1.5 flex gap-2'>
+                        <div className='flex items-center rounded-xl border-[1.5px] border-border bg-surface-2 px-3 text-sm font-bold text-ink'>
+                          +234
+                        </div>
+                        <input
+                          type='tel'
+                          placeholder='801 234 5678'
+                          aria-label='Mobile number'
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
+                        />
+                      </div>
+                      <div className='mb-4 text-[11px] text-muted'>
+                        We only use this to save your call and send your OTP
+                        — no spam, ever.
+                      </div>
+                    </>
                   )}
+
+                  <button
+                    type='button'
+                    onClick={handleSubmit}
+                    disabled={!canSubmit || submitting}
+                    className={`w-full rounded-xl px-6 py-3.75 font-black transition-colors ${
+                      canSubmit && !submitting
+                        ? 'cursor-pointer bg-lime text-lime-ink shadow-[0_5px_0_#8FC200]'
+                        : 'cursor-not-allowed bg-border text-neutral-10'
+                    }`}
+                  >
+                    {submitting
+                      ? 'Submitting…'
+                      : showPhoneStep
+                        ? 'Send Code'
+                        : 'Confirm prediction'}
+                  </button>
+
                   {errorMsg && (
-                    <div className='mt-2.5 text-[16.5px] font-medium text-error'>
+                    <div className='mt-2.5 text-[14px] font-medium text-error'>
                       {errorMsg}
                     </div>
                   )}
+
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setStage('pick')
+                      setErrorMsg(null)
+                    }}
+                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
+                  >
+                    ← Change my answer
+                  </button>
                 </div>
               )}
 
               {stage === 'code' && (
-                <div className='mt-5.5 border-t border-dashed border-border pt-5'>
-                  <div className='mb-3 text-lg text-placeholder'>
-                    We sent a 6-digit code to{' '}
-                    <strong className='text-ink'>{destination}</strong>.
-                    Enter it to confirm your prediction.
+                <div className='px-7.5 pt-5 pb-6.5'>
+                  <div className='mb-4 flex items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 py-3'>
+                    <span className='text-lg'>📱</span>
+                    <span className='text-[12.5px] font-semibold text-ink'>
+                      Code sent to <strong>{destination}</strong>
+                    </span>
                   </div>
-                  <div className='flex flex-wrap gap-2.5'>
-                    <input
-                      type='text'
-                      inputMode='numeric'
-                      maxLength={6}
-                      placeholder='6-digit code'
-                      aria-label='Verification code'
-                      value={code}
-                      onChange={(e) =>
-                        setCode(e.target.value.replace(/\D/g, ''))
-                      }
-                      className='min-w-45 flex-1 rounded-lg border border-border bg-paper px-4 py-3.25 text-[15px] tracking-[4px] text-ink placeholder:text-placeholder placeholder:tracking-normal'
-                    />
-                    <button
-                      type='button'
-                      onClick={handleConfirmCode}
-                      disabled={code.trim().length !== 6 || submitting}
-                      className={`rounded-lg px-6 py-3.25 font-bold transition-colors cursor-pointer ${
-                        code.trim().length === 6 && !submitting
-                          ? 'bg-lime text-lime-ink'
-                          : 'cursor-not-allowed bg-border text-neutral-10'
-                      }`}
-                    >
-                      {submitting ? 'Verifying…' : 'Verify & submit'}
-                    </button>
+
+                  <div className='mb-2 text-xs font-bold text-muted'>
+                    Enter the {CODE_LENGTH}-digit code
                   </div>
-                  {errorMsg && (
-                    <div className='mt-2.5 text-[16.5px] font-medium text-error'>
-                      {errorMsg}
-                    </div>
-                  )}
+                  <div className='mb-3.5 flex gap-2'>
+                    {Array.from({ length: CODE_LENGTH }).map((_, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => {
+                          codeBoxRefs.current[i] = el
+                        }}
+                        type='text'
+                        inputMode='numeric'
+                        maxLength={1}
+                        aria-label={`Digit ${i + 1} of verification code`}
+                        value={code[i] ?? ''}
+                        onChange={(e) =>
+                          handleCodeBoxChange(i, e.target.value)
+                        }
+                        onKeyDown={(e) => handleCodeBoxKeyDown(i, e)}
+                        onPaste={handleCodePaste}
+                        onFocus={(e) => e.target.select()}
+                        className={`h-13 w-full flex-1 rounded-[10px] border-[1.5px] bg-surface text-center text-xl font-black text-ink transition-colors ${
+                          code[i] ? 'border-lime' : 'border-border'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
                   <button
                     type='button'
                     onClick={handleResendCode}
                     disabled={resendMutation.isPending || resendCooldown > 0}
-                    className={`mt-2.5 text-[18px] font-bold underline underline-offset-2 ${
+                    className={`mb-4 text-xs font-bold underline underline-offset-2 ${
                       resendMutation.isPending || resendCooldown > 0
                         ? 'cursor-not-allowed text-neutral-10'
-                        : 'cursor-pointer text-neutral-10'
+                        : 'cursor-pointer text-dark dark:text-lime'
                     }`}
                   >
                     {resendMutation.isPending
@@ -369,86 +496,119 @@ export default function MarketCard() {
                         ? `Resend code in ${resendCooldown}s`
                         : "Didn't get it? Resend code"}
                   </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className='px-7.5 pt-8.5 pb-7.5 text-center'>
-              <div className='mb-4 inline-block -rotate-3 rounded-md border-2 border-market-success px-4 py-1.5  text-base font-bold tracking-[3px] text-market-success uppercase'>
-                Confirmed
-              </div>
-              <div className='mb-5.5 font-display text-[22px] font-black text-ink uppercase'>
-                Prediction submitted
-              </div>
-              <div className='mb-5.5 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left'>
-                <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                  <div className='mb-1  text-[14px] tracking-wide text-neutral-10 uppercase'>
-                    Founder Number
-                  </div>
-                  <div className=' text-[17px] font-bold text-success'>
-                    {founderNumber}
-                  </div>
-                </div>
-                <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                  <div className='mb-1  text-[14px] tracking-wide text-neutral-10 uppercase'>
-                    Today&apos;s entry
-                  </div>
-                  <div className=' text-[17px] font-bold text-success'>
-                    Confirmed
-                  </div>
-                </div>
-                <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                  <div className='mb-1  text-[14px] tracking-wide text-neutral-10 uppercase'>
-                    Current Founder rank
-                  </div>
-                  <div className=' text-[17px] font-bold text-success'>
-                    {founderRank}
-                  </div>
-                </div>
-                <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                  <div className='mb-1  text-[14px] tracking-wide text-neutral-10 uppercase'>
-                    Your prediction
-                  </div>
-                  <div className=' text-[17px] font-bold text-success'>
-                    {pickedSide?.toUpperCase()}
-                  </div>
-                </div>
-              </div>
-              <div className='mb-4.5 text-[17.5px] text-placeholder'>
-                Come back after midnight for today&apos;s result.
-              </div>
-              <div className='inline-flex items-center gap-2.5 rounded-full border border-border bg-paper px-4.5 py-2.5 text-sm md:text-[17px] text-neutral-10'>
-                Today&apos;s window closes in{' '}
-                <b className='text-[15px] text-ink'>{closesClock}</b>
-              </div>
 
-              <div className='mt-5.5 border-t border-dashed border-border pt-5 text-left'>
-                <div className='mb-3 text-[17.5px] text-placeholder'>
-                  Want to climb faster? Invite a friend — you both earn{' '}
-                  <strong className='text-success'>+5 points</strong> when
-                  they predict.
-                </div>
-                <div className='flex flex-wrap gap-2.5'>
-                  <input
-                    readOnly
-                    value={referLink}
-                    aria-label='Your referral link'
-                    className='min-w-45 flex-1 rounded-lg border border-border bg-paper px-3.5 py-3  text-lg text-placeholder'
-                  />
                   <button
                     type='button'
-                    onClick={handleCopy}
-                    className='rounded-lg cursor-pointer bg-lime px-6 py-3.25 font-bold text-lime-ink'
+                    onClick={handleConfirmCode}
+                    disabled={code.trim().length !== CODE_LENGTH || submitting}
+                    className={`w-full rounded-xl px-6 py-3.75 font-black transition-colors ${
+                      code.trim().length === CODE_LENGTH && !submitting
+                        ? 'cursor-pointer bg-lime text-lime-ink shadow-[0_5px_0_#8FC200]'
+                        : 'cursor-not-allowed bg-border text-neutral-10'
+                    }`}
                   >
-                    {copied ? 'Copied!' : 'Copy link'}
+                    {submitting ? 'Verifying…' : 'Confirm & Lock In'}
+                  </button>
+
+                  {errorMsg && (
+                    <div className='mt-2.5 text-[14px] font-medium text-error'>
+                      {errorMsg}
+                    </div>
+                  )}
+
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setStage('phone')
+                      setErrorMsg(null)
+                    }}
+                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
+                  >
+                    ← Wrong number?
                   </button>
                 </div>
-                <div className='mt-2.5 text-[16px] font-semibold text-success'>
-                  Refer as many friends as possible — every one of them moves
-                  you up the board!
+              )}
+
+              {stage === 'done' && (
+                <div className='px-7.5 pt-6 pb-7.5 text-center'>
+                  <div className='mx-auto mb-3.5 flex h-13 w-13 items-center justify-center rounded-full bg-lime text-lime-ink'>
+                    <CheckIcon />
+                  </div>
+                  <div className='mb-1 font-display text-[19px] font-black text-ink'>
+                    You&apos;re locked in!
+                  </div>
+                  <div className='mb-4.5 text-[13px] text-muted'>
+                    Your {pickedSide?.toUpperCase()} call is saved. Come back
+                    tomorrow for a new one.
+                  </div>
+
+                  <div className='mb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left'>
+                    <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
+                      <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
+                        Founder Number
+                      </div>
+                      <div className='text-[17px] font-bold text-success'>
+                        {founderNumber}
+                      </div>
+                    </div>
+                    <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
+                      <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
+                        Current Founder rank
+                      </div>
+                      <div className='text-[17px] font-bold text-success'>
+                        {founderRank}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='mb-4.5 inline-flex items-center gap-2.5 rounded-full border border-border bg-paper px-4.5 py-2.5 text-sm text-neutral-10'>
+                    Today&apos;s window closes in{' '}
+                    <b className='text-[15px] text-ink'>{closesClock}</b>
+                  </div>
+
+                  <div className='mb-3.5 flex items-center justify-center gap-2 rounded-full bg-surface-2 px-4 py-2.5 text-[12.5px] font-bold text-ink'>
+                    <span>🎯</span>
+                    Share your link — you both earn +5 Founder points
+                  </div>
+
+                  <div className='mb-3.5 flex items-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-border px-3.5 py-3'>
+                    <div className='min-w-0 flex-1 truncate text-left text-[12.5px] font-bold text-ink'>
+                      {referLink}
+                    </div>
+                    <button
+                      type='button'
+                      onClick={handleCopy}
+                      className={`shrink-0 cursor-pointer rounded-lg px-3.5 py-2 text-[11.5px] font-black transition-colors ${
+                        copied
+                          ? 'bg-success text-white'
+                          : 'bg-dark text-white dark:bg-lime dark:text-lime-ink'
+                      }`}
+                    >
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+
+                  <div className='flex gap-2'>
+                    <a
+                      href={whatsappHref}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success'
+                    >
+                      <WhatsAppIcon />
+                      WhatsApp
+                    </a>
+                    <button
+                      type='button'
+                      onClick={handleCopy}
+                      className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-border bg-surface px-3 py-3 text-[12.5px] font-bold text-ink'
+                    >
+                      🔗 Copy Link
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>

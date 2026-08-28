@@ -27,10 +27,10 @@ export const referSteps: ReferStep[] = [
 ]
 
 export const founderBenefits: FounderBenefit[] = [
-  { icon: '🏅', text: 'A Founder Badge that never expires' },
-  { icon: '🚀', text: 'Skip the queue at public launch' },
-  { icon: '🎁', text: 'A welcome bonus stacked on top of the standard one' },
-  { icon: '🎟', text: 'Free credits to make your first calls with' },
-  { icon: '💰', text: 'A bigger match on your first deposit' },
-  { icon: '🎉', text: 'First access to every launch-week drop' },
+  { icon: 'badge', text: 'A Founder Badge that never expires' },
+  { icon: 'rocket', text: 'Skip the queue at public launch' },
+  { icon: 'gift', text: 'A welcome bonus stacked on top of the standard one' },
+  { icon: 'ticket', text: 'Free credits to make your first calls with' },
+  { icon: 'wallet', text: 'A bigger match on your first deposit' },
+  { icon: 'confetti', text: 'First access to every launch-week drop' },
 ]

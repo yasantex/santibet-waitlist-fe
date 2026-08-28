@@ -13,6 +13,6 @@ export interface ReferStep {
 }
 
 export interface FounderBenefit {
-  icon: string;
+  icon: import('../components/icons').IconName;
   text: string;
 }
