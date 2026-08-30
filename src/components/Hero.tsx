@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import CountdownTimer from './CountdownTimer'
+import { Icon } from './icons'
 import { useActiveCampaign, useCampaignStats } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
 import { useAppSelector } from '../redux/hooks'
@@ -36,7 +37,16 @@ export default function Hero() {
     setTimeout(() => setCopied(false), 1800)
   }
 
-  const tickerItems = ['Predict Daily', 'Win Naira', 'Zero Deposit', 'Launching Soon']
+  const tickerItems = [
+    'Predict Daily',
+    'Win Naira',
+    'Win Data',
+    'Zero Deposit',
+    'Win Points',
+    'Win Airtime',
+    'Launching Soon',
+    'Win Cash',
+  ]
 
   return (
     <>
@@ -50,7 +60,8 @@ export default function Hero() {
             </div>
 
             <h1 className='max-w-230 px-5 font-display italic text-[clamp(30px,8.5vw,59px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
-              Join the pre-launch <span className='text-dark dark:text-lime'>waitlist.</span>
+              Join the <br className='md:block hidden' /> pre-launch{' '}
+              <span className='text-dark dark:text-lime'>waitlist.</span>
             </h1>
 
             <div className='-rotate-2 mt-1'>
@@ -99,10 +110,16 @@ export default function Hero() {
             </div>
 
             {standing ? (
-              <div className='w-full max-w-110 md:max-w-none rounded-2xl border-[1.5px] border-dark bg-surface px-5 py-4 text-left dark:border-lime'>
+              <div className='relative w-full max-w-110 md:max-w-none rounded-2xl border-[1.5px] border-dark bg-surface px-5 pt-5 pb-4 text-left dark:border-lime'>
+                <span className='absolute -top-3 left-4 rounded-full bg-lime px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.05em] text-lime-ink'>
+                  Founder Rewards
+                </span>
                 <div className='flex items-center gap-3.5 mb-3.5'>
-                  <div className='flex h-13.5 w-13.5 shrink-0 items-center justify-center rounded-xl bg-dark text-2xl dark:bg-lime'>
-                    🏆
+                  <div className='flex h-13.5 w-13.5 shrink-0 items-center justify-center rounded-xl bg-dark dark:bg-lime'>
+                    <Icon
+                      name='crown'
+                      className='h-6.5 w-6.5 text-lime dark:text-lime-ink'
+                    />
                   </div>
                   <div>
                     <div className='text-sm font-black text-ink'>
@@ -133,9 +150,15 @@ export default function Hero() {
                 </div>
               </div>
             ) : (
-              <div className='flex items-center gap-3.5 w-full max-w-110 md:max-w-none rounded-2xl border-[1.5px] border-dark bg-surface px-5 py-4 text-left dark:border-lime'>
-                <div className='flex h-13.5 w-13.5 shrink-0 items-center justify-center rounded-xl bg-dark text-2xl dark:bg-lime'>
-                  🏆
+              <div className='relative flex items-center gap-3.5 w-full max-w-110 md:max-w-none rounded-2xl border-[1.5px] border-dark bg-surface px-5 pt-5 pb-4 text-left dark:border-lime'>
+                <span className='absolute -top-3 left-4 rounded-full bg-lime px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.05em] text-lime-ink'>
+                  Founder Rewards
+                </span>
+                <div className='flex h-13.5 w-13.5 shrink-0 items-center justify-center rounded-xl bg-dark dark:bg-lime'>
+                  <Icon
+                    name='crown'
+                    className='h-6.5 w-6.5 text-lime dark:text-lime-ink'
+                  />
                 </div>
                 <div>
                   <div className='text-sm font-black text-ink'>

@@ -80,7 +80,7 @@ export default function ProofSection() {
               feedItems.map((item, i) => (
                 <div
                   key={i}
-                  className='animate-feed-in flex items-center gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0 [&_strong]:text-ink'
+                  className='animate-feed-in flex items-center justify-between gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0 [&_strong]:text-ink'
                   dangerouslySetInnerHTML={{ __html: activityHtml(item) }}
                 />
               ))
