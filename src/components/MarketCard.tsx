@@ -388,7 +388,7 @@ export default function MarketCard() {
                         Your mobile number
                       </div>
                       <div className='mb-1.5 flex gap-2'>
-                        <div className='flex items-center rounded-xl border-[1.5px] border-border bg-surface-2 px-3 text-sm font-bold text-ink'>
+                        <div className='flex items-center rounded-xl border-[1.5px] border-border bg-surface-2 px-3 py-2 text-sm font-bold text-ink'>
                           +234
                         </div>
                         <input
@@ -397,7 +397,7 @@ export default function MarketCard() {
                           aria-label='Mobile number'
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
+                          className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
                         />
                       </div>
                       <div className='mb-4 text-[11px] text-muted'>
