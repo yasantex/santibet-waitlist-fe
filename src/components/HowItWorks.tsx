@@ -1,5 +1,6 @@
 import { journeySteps } from '../utils/data'
 import SectionHead from './SectionHead'
+import { Icon } from './icons'
 
 export default function HowItWorks() {
   return (
@@ -17,7 +18,7 @@ export default function HowItWorks() {
           subtitle='Small wins today, a legacy rank by launch. Every correct call moves the needle.'
         />
         <div className='mx-auto flex max-w-100 md:max-w-none flex-col gap-2.5 md:grid md:grid-cols-5'>
-          {journeySteps.map((step, i) => (
+          {journeySteps.map((step) => (
             <div
               key={step.when}
               className={`flex items-center md:flex-col md:items-start gap-3.5 md:gap-2.5 rounded-2xl border px-4.5 py-4 md:px-5 md:py-5 ${
@@ -27,13 +28,13 @@ export default function HowItWorks() {
               }`}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                   step.final
                     ? 'bg-lime text-lime-ink dark:bg-lime-ink dark:text-lime'
                     : 'bg-dark text-lime dark:border dark:border-border dark:bg-surface-2'
                 }`}
               >
-                {i + 1}
+                <Icon name={step.icon} className='h-5 w-5' />
               </div>
               <div>
                 <div

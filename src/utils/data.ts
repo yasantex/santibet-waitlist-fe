@@ -1,11 +1,16 @@
 import type { FounderBenefit, JourneyStep, ReferStep } from './types'
 
 export const journeySteps: JourneyStep[] = [
-  { when: 'Today', what: 'Pocket some airtime' },
-  { when: 'This week', what: 'Stack real cash' },
-  { when: 'Every correct call', what: 'Bank Founder points' },
-  { when: 'Launch day', what: 'Chase ₦1,000,000', final: true },
-  { when: 'After launch', what: 'Keep Founder perks for life' },
+  { when: 'Today', what: 'Pocket some airtime', icon: 'sunrise' },
+  { when: 'This week', what: 'Stack real cash', icon: 'coin' },
+  { when: 'Every correct call', what: 'Bank Founder points', icon: 'target' },
+  {
+    when: 'Launch day',
+    what: 'Chase ₦1,000,000',
+    icon: 'trophy',
+    final: true,
+  },
+  { when: 'After launch', what: 'Keep Founder perks for life', icon: 'crown' },
 ]
 
 export const referSteps: ReferStep[] = [

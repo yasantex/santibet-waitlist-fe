@@ -169,7 +169,6 @@ export function useConfirmVerification(slug: string | null | undefined) {
   >({
     path: `${CAMPAIGNS_BASE}/${slug}/verifications/confirm`,
     method: 'POST',
-    headers: { 'X-Client-Type': 'mobile' },
     mutationOptions: {
       onSuccess: invalidate,
     },
