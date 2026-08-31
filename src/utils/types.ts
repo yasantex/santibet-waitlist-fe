@@ -3,6 +3,7 @@ export type PredictionSide = "yes" | "no";
 export interface JourneyStep {
   when: string;
   what: string;
+  icon: import('../components/icons').IconName;
   final?: boolean;
 }
 
