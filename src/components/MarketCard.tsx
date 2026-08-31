@@ -21,6 +21,14 @@ type Stage = 'pick' | 'phone' | 'code' | 'done'
 
 const CODE_LENGTH = 6
 const STAGE_ORDER: Stage[] = ['pick', 'phone', 'code', 'done']
+// Nigerian mobile numbers: 10 digits after the leading 0, starting 7/8/9.
+const NG_PHONE_REGEX = /^[789]\d{9}$/
+
+function formatPhoneDisplay(digits: string) {
+  return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)]
+    .filter(Boolean)
+    .join(' ')
+}
 
 function CheckIcon() {
   return (
@@ -126,7 +134,8 @@ export default function MarketCard() {
   }, [stage])
 
   const showPhoneStep = !knownReturningPlayer || changingPhone
-  const canSubmit = showPhoneStep ? phone.trim().length > 0 : true
+  const isValidPhone = NG_PHONE_REGEX.test(phone)
+  const canSubmit = showPhoneStep ? isValidPhone : true
 
   const yesPercent = stats?.today?.yesPercent
   const noPercent = yesPercent != null ? 100 - yesPercent : undefined
@@ -135,7 +144,9 @@ export default function MarketCard() {
   const noPercentLabel =
     noPercent != null ? `${noPercent}%` : 'No predictions yet'
   const alreadyPredicted = (
-    stats?.today?.predictions ?? stats?.totalPredictions ?? 0
+    stats?.today?.predictions ??
+    stats?.totalPredictions ??
+    0
   ).toLocaleString()
   const prizePoolLabel = stats?.dailyPrizePool?.[0]
     ? formatMoney(stats.dailyPrizePool[0])
@@ -148,6 +159,14 @@ export default function MarketCard() {
     setPickedSide(side)
     setErrorMsg(null)
     setStage('phone')
+  }
+
+  function handlePhoneChange(raw: string) {
+    const digits = raw
+      .replace(/\D/g, '')
+      .replace(/^0+/, '')
+      .slice(0, 10)
+    setPhone(digits)
   }
 
   async function handleSubmit() {
@@ -378,8 +397,8 @@ export default function MarketCard() {
                     </span>
                     <span className='text-[12.5px] font-semibold text-ink'>
                       {showPhoneStep
-                        ? 'Nice call. One step to lock it in.'
-                        : 'Nice call. Tap confirm to lock it in.'}
+                        ? 'Nice pick. One last step to lock it in.'
+                        : 'Nice pick. Tap confirm to lock it in.'}
                     </span>
                   </div>
 
@@ -410,16 +429,26 @@ export default function MarketCard() {
                         </div>
                         <input
                           type='tel'
+                          inputMode='numeric'
                           placeholder='801 234 5678'
                           aria-label='Mobile number'
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
+                          value={formatPhoneDisplay(phone)}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          className={`min-w-0 flex-1 rounded-xl border-[1.5px] bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal ${
+                            phone.length === 10 && !isValidPhone
+                              ? 'border-error'
+                              : 'border-border'
+                          }`}
                         />
                       </div>
-                      <div className='mb-4 text-[11px] text-muted'>
-                        We only use this to save your call and send your OTP
-                        — no spam, ever.
+                      {phone.length === 10 && !isValidPhone && (
+                        <div className='mb-2 text-[11px] font-bold text-error'>
+                          Enter a valid Nigerian mobile number.
+                        </div>
+                      )}
+                      <div className='mb-4 text-[11px] font-bold text-muted'>
+                        We’ll text you a verification code to secure your
+                        prediction. No spam, ever.
                       </div>
                     </>
                   )}
@@ -437,7 +466,7 @@ export default function MarketCard() {
                     {submitting
                       ? 'Submitting…'
                       : showPhoneStep
-                        ? 'Send Code'
+                        ? 'Send Verification Code'
                         : 'Confirm prediction'}
                   </button>
 
@@ -456,7 +485,7 @@ export default function MarketCard() {
                     }}
                     className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
                   >
-                    ← Change my answer
+                    ← Change pick
                   </button>
                 </div>
               )}
@@ -464,7 +493,6 @@ export default function MarketCard() {
               {stage === 'code' && (
                 <div className='px-7.5 pt-5 pb-6.5'>
                   <div className='mb-4 flex items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 py-3'>
-                    <span className='text-lg'>📱</span>
                     <span className='text-[12.5px] font-semibold text-ink'>
                       Code sent to <strong>{destination}</strong>
                     </span>
@@ -485,9 +513,7 @@ export default function MarketCard() {
                         maxLength={1}
                         aria-label={`Digit ${i + 1} of verification code`}
                         value={code[i] ?? ''}
-                        onChange={(e) =>
-                          handleCodeBoxChange(i, e.target.value)
-                        }
+                        onChange={(e) => handleCodeBoxChange(i, e.target.value)}
                         onKeyDown={(e) => handleCodeBoxKeyDown(i, e)}
                         onPaste={handleCodePaste}
                         onFocus={(e) => e.target.select()}

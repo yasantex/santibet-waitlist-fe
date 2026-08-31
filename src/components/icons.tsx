@@ -9,6 +9,9 @@ export type IconName =
   | 'ticket'
   | 'wallet'
   | 'confetti'
+  | 'sunrise'
+  | 'coin'
+  | 'target'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   badge: (
@@ -68,6 +71,22 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d='m4 20 4-14M9 20l3-12M14 20l2-10M4 5l16 3M4 10l14 1' />
       <circle cx='19' cy='6' r='1' />
       <circle cx='6' cy='16' r='1' />
+    </>
+  ),
+  sunrise: (
+    <path d='M12 3v4M4.2 10.2l1.4 1.4M19.8 10.2l-1.4 1.4M2 18h20M6 18a6 6 0 0 1 12 0' />
+  ),
+  coin: (
+    <>
+      <circle cx='12' cy='12' r='8' />
+      <path d='M12 8v8M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.6c0 2.2-5 1.2-5 3.4 0 .9 1 1.7 2.5 1.7s2.5-.8 2.5-1.7' />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx='12' cy='12' r='8' />
+      <circle cx='12' cy='12' r='4' />
+      <circle cx='12' cy='12' r='0.8' fill='currentColor' stroke='none' />
     </>
   ),
 }
