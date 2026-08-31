@@ -93,6 +93,7 @@ export default function MarketCard() {
   const resendMutation = useSendVerification(slug)
 
   const [pickedSide, setPickedSide] = useState<PredictionSide | null>(null)
+  const [changingPhone, setChangingPhone] = useState(false)
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [stage, setStage] = useState<Stage>('pick')
@@ -124,8 +125,8 @@ export default function MarketCard() {
     if (stage === 'code') codeBoxRefs.current[0]?.focus()
   }, [stage])
 
-  const showPhoneStep = !knownReturningPlayer
-  const canSubmit = knownReturningPlayer || phone.trim().length > 0
+  const showPhoneStep = !knownReturningPlayer || changingPhone
+  const canSubmit = showPhoneStep ? phone.trim().length > 0 : true
 
   const yesPercent = stats?.today?.yesPercent
   const noPercent = yesPercent != null ? 100 - yesPercent : undefined
@@ -155,7 +156,7 @@ export default function MarketCard() {
     try {
       const result = await predictMutation.mutateAsync({
         choice: pickedSide.toUpperCase() as 'YES' | 'NO',
-        phone: knownReturningPlayer ? undefined : phone.trim(),
+        phone: showPhoneStep ? phone.trim() : undefined,
         referralCode,
       })
       if (result.status === 'AWAITING_CODE') {
@@ -382,6 +383,22 @@ export default function MarketCard() {
                     </span>
                   </div>
 
+                  {knownReturningPlayer && (
+                    <button
+                      type='button'
+                      onClick={() => {
+                        setChangingPhone((v) => !v)
+                        setPhone('')
+                        setErrorMsg(null)
+                      }}
+                      className='mb-4 block cursor-pointer text-left text-xs font-bold text-dark underline underline-offset-2 dark:text-lime'
+                    >
+                      {changingPhone
+                        ? 'Use my saved number instead'
+                        : 'Not your number? Change it'}
+                    </button>
+                  )}
+
                   {showPhoneStep && (
                     <>
                       <div className='mb-2 text-xs font-bold text-muted'>
@@ -434,6 +451,7 @@ export default function MarketCard() {
                     type='button'
                     onClick={() => {
                       setStage('pick')
+                      setChangingPhone(false)
                       setErrorMsg(null)
                     }}
                     className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
