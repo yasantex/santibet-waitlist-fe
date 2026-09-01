@@ -9,14 +9,6 @@ import {
 import { formatMoney } from '../utils/money'
 import type { ActivityItem } from '../types/campaign'
 
-function formatResolvedDate(iso: string | null) {
-  if (!iso) return null
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-  }).format(new Date(iso))
-}
-
 function activityHtml(item: ActivityItem) {
   switch (item.type) {
     case 'JOINED':
@@ -107,7 +99,7 @@ export default function ProofSection() {
                 <div className='mb-4 font-display text-[17px] font-black leading-snug'>
                   {previous.text}
                 </div>
-                <div className='grid grid-cols-2 gap-3.5'>
+                <div className='grid grid-cols-2 gap-x-6 gap-y-3.5'>
                   <div>
                     <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
                       Correct Answer
@@ -120,10 +112,28 @@ export default function ProofSection() {
                   </div>
                   <div>
                     <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
-                      Resolved
+                      Got It Right
                     </div>
                     <div className='text-lg font-black text-lime'>
-                      {formatResolvedDate(previous.resolvedAt) ?? '—'}
+                      {previous.correct.toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
+                      Paid Out
+                    </div>
+                    <div className='text-lg font-black text-lime'>
+                      {previous.payout != null
+                        ? previous.payout.toLocaleString()
+                        : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
+                      Total Calls
+                    </div>
+                    <div className='text-lg font-black text-lime'>
+                      {previous.predictions.toLocaleString()}
                     </div>
                   </div>
                 </div>
