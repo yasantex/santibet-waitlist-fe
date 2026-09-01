@@ -120,6 +120,11 @@ export interface PreviousQuestion extends TodayQuestion {
   evidenceUrl: string | null
   resolvedAt: string | null
   status: 'CLOSED' | 'RESOLVED' | 'VOID'
+  correctedAt: string | null
+  correctionNote: string | null
+  predictions: number
+  correct: number
+  payout: number | null
 }
 
 export interface LeaderboardEntry {
