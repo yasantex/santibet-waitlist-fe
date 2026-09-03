@@ -161,6 +161,17 @@ export function useSendVerification(slug: string | null | undefined) {
   })
 }
 
+/** Fallback for players SMS never reached — the phone number is still what gets verified. */
+export function useSendEmailVerification(slug: string | null | undefined) {
+  return useSantibetMutation<
+    SendVerificationResult,
+    { phone: string; email: string }
+  >({
+    path: `${CAMPAIGNS_BASE}/${slug}/verifications/email`,
+    method: 'POST',
+  })
+}
+
 export function useConfirmVerification(slug: string | null | undefined) {
   const invalidate = useInvalidateCampaign(slug)
   return useSantibetMutation<
