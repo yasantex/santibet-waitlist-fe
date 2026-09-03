@@ -9,6 +9,7 @@ import {
   useConfirmVerification,
   useMe,
   usePredict,
+  useSendEmailVerification,
   useSendVerification,
   useTodayQuestion,
 } from '../hooks/useCampaign'
@@ -23,6 +24,9 @@ const CODE_LENGTH = 6
 const STAGE_ORDER: Stage[] = ['pick', 'phone', 'code', 'done']
 // Nigerian mobile numbers: 10 digits after the leading 0, starting 7/8/9.
 const NG_PHONE_REGEX = /^[789]\d{9}$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// After this many SMS resends, offer to send the code by email instead.
+const EMAIL_FALLBACK_AFTER_RESENDS = 1
 
 function formatPhoneDisplay(digits: string) {
   return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)]
@@ -99,6 +103,7 @@ export default function MarketCard() {
   const predictMutation = usePredict(slug)
   const confirmMutation = useConfirmVerification(slug)
   const resendMutation = useSendVerification(slug)
+  const emailVerificationMutation = useSendEmailVerification(slug)
 
   const [pickedSide, setPickedSide] = useState<PredictionSide | null>(null)
   const [changingPhone, setChangingPhone] = useState(false)
@@ -109,6 +114,10 @@ export default function MarketCard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendCount, setResendCount] = useState(0)
+  const [emailFallbackOpen, setEmailFallbackOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
   const [referralCode] = useState<string | undefined>(() =>
     typeof window === 'undefined'
       ? undefined
@@ -216,11 +225,33 @@ export default function MarketCard() {
       const result = await resendMutation.mutateAsync({ phone: phone.trim() })
       setDestination(result.destination)
       setResendCooldown(60)
+      setResendCount((n) => n + 1)
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(
           err,
           'Could not resend the code — try again shortly.',
+        ),
+      )
+    }
+  }
+
+  async function handleSendEmailCode() {
+    if (!EMAIL_REGEX.test(email.trim())) return
+    setErrorMsg(null)
+    try {
+      const result = await emailVerificationMutation.mutateAsync({
+        phone: phone.trim(),
+        email: email.trim(),
+      })
+      setDestination(result.destination)
+      setResendCooldown(60)
+      setEmailSent(true)
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(
+          err,
+          'Could not send the code to that email — try again.',
         ),
       )
     }
@@ -481,6 +512,10 @@ export default function MarketCard() {
                     onClick={() => {
                       setStage('pick')
                       setChangingPhone(false)
+                      setResendCount(0)
+                      setEmailFallbackOpen(false)
+                      setEmail('')
+                      setEmailSent(false)
                       setErrorMsg(null)
                     }}
                     className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
@@ -541,6 +576,61 @@ export default function MarketCard() {
                         : "Didn't get it? Resend code"}
                   </button>
 
+                  {resendCount >= EMAIL_FALLBACK_AFTER_RESENDS &&
+                    !emailSent && (
+                      <div className='mb-4 -mt-2'>
+                        {!emailFallbackOpen ? (
+                          <button
+                            type='button'
+                            onClick={() => setEmailFallbackOpen(true)}
+                            className='block cursor-pointer text-xs font-bold text-dark underline underline-offset-2 dark:text-lime'
+                          >
+                            Still no code? Request it by email
+                          </button>
+                        ) : (
+                          <div className='rounded-xl bg-surface-2 px-3.5 py-3'>
+                            <div className='mb-2 text-xs font-bold text-muted'>
+                              We&apos;ll send the code to this email instead
+                            </div>
+                            <div className='flex flex-wrap gap-2'>
+                              <input
+                                type='email'
+                                placeholder='you@example.com'
+                                aria-label='Email address'
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
+                              />
+                              <button
+                                type='button'
+                                onClick={handleSendEmailCode}
+                                disabled={
+                                  !EMAIL_REGEX.test(email.trim()) ||
+                                  emailVerificationMutation.isPending
+                                }
+                                className={`shrink-0 rounded-xl px-4 py-2 text-sm font-black transition-colors ${
+                                  EMAIL_REGEX.test(email.trim()) &&
+                                  !emailVerificationMutation.isPending
+                                    ? 'cursor-pointer bg-lime text-lime-ink'
+                                    : 'cursor-not-allowed bg-border text-neutral-10'
+                                }`}
+                              >
+                                {emailVerificationMutation.isPending
+                                  ? 'Sending…'
+                                  : 'Send'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  {emailSent && (
+                    <div className='mb-4 -mt-2 text-xs font-bold text-success'>
+                      Code sent — check your email.
+                    </div>
+                  )}
+
                   <button
                     type='button'
                     onClick={handleConfirmCode}
@@ -564,6 +654,10 @@ export default function MarketCard() {
                     type='button'
                     onClick={() => {
                       setStage('phone')
+                      setResendCount(0)
+                      setEmailFallbackOpen(false)
+                      setEmail('')
+                      setEmailSent(false)
                       setErrorMsg(null)
                     }}
                     className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted'
