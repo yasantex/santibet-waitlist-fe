@@ -124,7 +124,7 @@ export interface PreviousQuestion extends TodayQuestion {
   correctionNote: string | null
   predictions: number
   correct: number
-  payout: number | null
+  payout: { winners: number; paid: number } | null
 }
 
 export interface LeaderboardEntry {
