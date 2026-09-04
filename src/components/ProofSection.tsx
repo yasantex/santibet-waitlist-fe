@@ -124,7 +124,7 @@ export default function ProofSection() {
                     </div>
                     <div className='text-lg font-black text-lime'>
                       {previous.payout != null
-                        ? previous.payout.toLocaleString()
+                        ? previous.payout.paid.toLocaleString()
                         : '—'}
                     </div>
                   </div>
