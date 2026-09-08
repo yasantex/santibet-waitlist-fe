@@ -4,19 +4,30 @@ import { useState } from 'react'
 import CountdownTimer from './CountdownTimer'
 import { Icon } from './icons'
 import WaitlistRulesModal from './WaitlistRulesModal'
-import { useActiveCampaign, useCampaignStats } from '../hooks/useCampaign'
+import { useActiveCampaign, useCampaignStats, useCampaignRules } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
 import { useAppSelector } from '../redux/hooks'
 
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
+  const { data: rules } = useCampaignRules(activeCampaign?.slug)
   const standing = useAppSelector((s) => s.campaign.standing)
   const [copied, setCopied] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
 
   const prizePool = stats?.dailyPrizePool?.[0]
   const prizePoolLabel = prizePool ? formatMoney(prizePool) : '—'
+
+  const launchHeadlineTier = rules?.prizes
+    .find((p) => p.period === 'LAUNCH')
+    ?.tiers.slice()
+    .sort((a, b) => a.place - b.place)[0]
+  // Falls back to the static figure until /rules loads — this is a hero
+  // one-liner, not worth a loading-state layout shift.
+  const grandPrizeLabel = launchHeadlineTier
+    ? formatMoney(launchHeadlineTier.amount)
+    : '₦1,000,000'
   const predictedLabel = (
     stats?.today?.predictions ??
     stats?.totalPredictions ??
@@ -74,7 +85,7 @@ export default function Hero() {
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
               One gist. One tap. Every correct call pulls you closer to{' '}
-              <strong className='text-ink font-bold'>₦1,000,000</strong> on
+              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> on
               launch day. No deposit, no wahala, no small print.
             </p>
             <div className='flex gap-2.5 items-center justify-center font-semibold rounded-full border border-border bg-surface px-5 py-2.5 text-sm w-fit text-ink md:justify-start'>
