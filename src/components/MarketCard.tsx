@@ -17,6 +17,7 @@ import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import { setStanding } from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
+import WaitlistRulesModal from './WaitlistRulesModal'
 
 type Stage = 'pick' | 'phone' | 'code' | 'done'
 
@@ -118,6 +119,7 @@ export default function MarketCard() {
   const [emailFallbackOpen, setEmailFallbackOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
   const [referralCode] = useState<string | undefined>(() =>
     typeof window === 'undefined'
       ? undefined
@@ -507,6 +509,18 @@ export default function MarketCard() {
                     </div>
                   )}
 
+                  <div className='mt-3 text-center text-[11px] font-medium text-muted'>
+                    By continuing, you agree to our{' '}
+                    <button
+                      type='button'
+                      onClick={() => setRulesOpen(true)}
+                      className='cursor-pointer font-bold text-dark underline underline-offset-2 dark:text-lime'
+                    >
+                      Waitlist &amp; Prediction Rules
+                    </button>
+                    .
+                  </div>
+
                   <button
                     type='button'
                     onClick={() => {
@@ -750,6 +764,11 @@ export default function MarketCard() {
           )}
         </div>
       </div>
+
+      <WaitlistRulesModal
+        open={rulesOpen}
+        onClose={() => setRulesOpen(false)}
+      />
     </div>
   )
 }
