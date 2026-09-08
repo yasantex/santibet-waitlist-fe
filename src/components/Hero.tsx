@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import CountdownTimer from './CountdownTimer'
 import { Icon } from './icons'
+import WaitlistRulesModal from './WaitlistRulesModal'
 import { useActiveCampaign, useCampaignStats } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
 import { useAppSelector } from '../redux/hooks'
@@ -12,6 +13,7 @@ export default function Hero() {
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
   const standing = useAppSelector((s) => s.campaign.standing)
   const [copied, setCopied] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
 
   const prizePool = stats?.dailyPrizePool?.[0]
   const prizePoolLabel = prizePool ? formatMoney(prizePool) : '—'
@@ -107,6 +109,17 @@ export default function Hero() {
               >
                 Join the waitlist — takes 10 seconds
               </a>
+              <div className='text-center text-[11px] font-medium text-muted'>
+                By continuing, you agree to our{' '}
+                <button
+                  type='button'
+                  onClick={() => setRulesOpen(true)}
+                  className='cursor-pointer font-bold text-dark underline underline-offset-2 dark:text-lime'
+                >
+                  Waitlist &amp; Prediction Rules
+                </button>
+                .
+              </div>
             </div>
 
             {standing ? (
@@ -186,6 +199,8 @@ export default function Hero() {
           )}
         </div>
       </div>
+
+      <WaitlistRulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
     </>
   )
 }
