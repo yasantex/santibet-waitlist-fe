@@ -38,6 +38,8 @@ export interface CampaignStats {
 }
 
 export interface ScoringRules {
+  pointsForJoining: number
+  pointsPerPrediction: number
   pointsPerCorrectPrediction: number
   pointsPerReferral: number
   pointsPerReferee: number
@@ -79,6 +81,13 @@ export interface PrizePeriodRules {
 }
 
 export interface CampaignRules {
+  campaign: {
+    name: string
+    startsOn: string
+    endsOn: string
+    launchAt: string | null
+    totalDays: number
+  }
   scoring: ScoringRules
   streakBonuses: StreakBonus[]
   levels: CampaignLevel[]
