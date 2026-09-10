@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PredictionSide } from '../utils/types'
+import type { ParticipantStanding } from '../types/campaign'
 import {
   getApiErrorMessage,
   useActiveCampaign,
@@ -14,8 +15,8 @@ import {
   useTodayQuestion,
 } from '../hooks/useCampaign'
 import { useCountdown } from '../hooks/useCountdown'
-import { useAppDispatch, useAppSelector } from '../redux/hooks'
-import { setStanding } from '../redux/campaignSlice'
+import { useAppDispatch } from '../redux/hooks'
+import { setDeviceToken } from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
 import WaitlistRulesModal from './WaitlistRulesModal'
 
@@ -86,7 +87,8 @@ function StepProgress({ stage }: { stage: Stage }) {
 
 export default function MarketCard() {
   const dispatch = useAppDispatch()
-  const standing = useAppSelector((s) => s.campaign.standing)
+  const [confirmedStanding, setConfirmedStanding] =
+    useState<ParticipantStanding | null>(null)
 
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
@@ -97,6 +99,7 @@ export default function MarketCard() {
     isError: todayQuestionError,
   } = useTodayQuestion(slug)
   const { data: meData } = useMe(slug)
+  const standing = confirmedStanding ?? meData ?? null
   const closes = useCountdown(todayQuestion?.closesAt)
 
   const knownReturningPlayer = Boolean(standing)
@@ -127,10 +130,6 @@ export default function MarketCard() {
   )
 
   const codeBoxRefs = useRef<Array<HTMLInputElement | null>>([])
-
-  useEffect(() => {
-    if (meData) dispatch(setStanding(meData))
-  }, [meData, dispatch])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -211,7 +210,8 @@ export default function MarketCard() {
         phone: phone.trim(),
         code: code.trim(),
       })
-      dispatch(setStanding(result))
+      setConfirmedStanding(result)
+      if (result.deviceToken) dispatch(setDeviceToken(result.deviceToken))
       setStage('done')
     } catch (err) {
       setErrorMsg(

@@ -4,15 +4,19 @@ import { useState } from 'react'
 import CountdownTimer from './CountdownTimer'
 import { Icon } from './icons'
 import WaitlistRulesModal from './WaitlistRulesModal'
-import { useActiveCampaign, useCampaignStats, useCampaignRules } from '../hooks/useCampaign'
+import {
+  useActiveCampaign,
+  useCampaignStats,
+  useCampaignRules,
+  useMe,
+} from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
-import { useAppSelector } from '../redux/hooks'
 
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
   const { data: rules } = useCampaignRules(activeCampaign?.slug)
-  const standing = useAppSelector((s) => s.campaign.standing)
+  const { data: standing } = useMe(activeCampaign?.slug)
   const [copied, setCopied] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
 
