@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PredictionSide } from '../utils/types'
+import type { ParticipantStanding } from '../types/campaign'
 import {
   getApiErrorMessage,
   useActiveCampaign,
@@ -14,8 +15,8 @@ import {
   useTodayQuestion,
 } from '../hooks/useCampaign'
 import { useCountdown } from '../hooks/useCountdown'
-import { useAppDispatch, useAppSelector } from '../redux/hooks'
-import { setStanding } from '../redux/campaignSlice'
+import { useAppDispatch } from '../redux/hooks'
+import { setDeviceToken } from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
 import WaitlistRulesModal from './WaitlistRulesModal'
 
@@ -86,7 +87,8 @@ function StepProgress({ stage }: { stage: Stage }) {
 
 export default function MarketCard() {
   const dispatch = useAppDispatch()
-  const standing = useAppSelector((s) => s.campaign.standing)
+  const [confirmedStanding, setConfirmedStanding] =
+    useState<ParticipantStanding | null>(null)
 
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
@@ -97,6 +99,7 @@ export default function MarketCard() {
     isError: todayQuestionError,
   } = useTodayQuestion(slug)
   const { data: meData } = useMe(slug)
+  const standing = confirmedStanding ?? meData ?? null
   const closes = useCountdown(todayQuestion?.closesAt)
 
   const knownReturningPlayer = Boolean(standing)
@@ -127,10 +130,6 @@ export default function MarketCard() {
   )
 
   const codeBoxRefs = useRef<Array<HTMLInputElement | null>>([])
-
-  useEffect(() => {
-    if (meData) dispatch(setStanding(meData))
-  }, [meData, dispatch])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -211,7 +210,8 @@ export default function MarketCard() {
         phone: phone.trim(),
         code: code.trim(),
       })
-      dispatch(setStanding(result))
+      setConfirmedStanding(result)
+      if (result.deviceToken) dispatch(setDeviceToken(result.deviceToken))
       setStage('done')
     } catch (err) {
       setErrorMsg(
@@ -360,7 +360,7 @@ export default function MarketCard() {
               {stage === 'pick' && (
                 <div className='px-7.5 pt-5 pb-6.5'>
                   <div className='mb-3.5 text-xs font-bold uppercase tracking-[0.05em] text-success'>
-                    Make Today&apos;s Call
+                    Make Today&apos;s Prediction
                   </div>
                   <div className='mb-5.5 font-display text-[26px] leading-8 font-black text-ink'>
                     {todayQuestion!.text}
@@ -404,7 +404,7 @@ export default function MarketCard() {
                     </div>
                     <div className='text-center'>
                       <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                        Called by
+                        Predicted by
                       </div>
                       <div className='text-[15px] font-bold text-ink'>
                         {alreadyPredicted}
@@ -690,7 +690,7 @@ export default function MarketCard() {
                     You&apos;re locked in!
                   </div>
                   <div className='mb-4.5 text-[13px] text-muted'>
-                    Your {pickedSide?.toUpperCase()} call is saved. Come back
+                    Your {pickedSide?.toUpperCase()} prediction is saved. Come back
                     tomorrow for a new one.
                   </div>
 

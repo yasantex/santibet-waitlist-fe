@@ -15,7 +15,7 @@ export default function HowItWorks() {
               One big finish.
             </>
           }
-          subtitle='Small wins today, a legacy rank by launch. Every correct call moves the needle.'
+          subtitle='Small wins today, a legacy rank by launch. Every correct prediction moves the needle.'
         />
         <div className='mx-auto flex max-w-100 md:max-w-none flex-col gap-2.5 md:grid md:grid-cols-5'>
           {journeySteps.map((step) => (

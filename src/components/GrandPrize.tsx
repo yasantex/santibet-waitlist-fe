@@ -30,13 +30,14 @@ export default function GrandPrize() {
 
   return (
     <section id='grand' className='scroll-mt-24 py-16'>
-      <div className='mx-auto max-w-270 px-6'>
+      <div className='mx-auto max-w-300 px-6'>
         <SectionHead
           kicker='Grand prize draw'
           title={
             <>
-              Every call is
-              <br />a lottery ticket.
+              Every Correct Prediction
+              <br />
+              leads to Jacpot Win.
             </>
           }
           subtitle={
