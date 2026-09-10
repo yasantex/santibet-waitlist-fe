@@ -42,7 +42,7 @@ export default function ReferFriend() {
               with backup.
             </>
           }
-          subtitle='Every friend who joins and makes a call moves you both up the board.'
+          subtitle='Every friend who joins and makes a prediction moves you both up the board.'
         />
 
         <div className='mx-auto mb-10 grid max-w-225 grid-cols-1 gap-5 sm:grid-cols-3'>

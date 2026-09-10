@@ -30,7 +30,7 @@ export default function FounderProgram() {
               Legendary by launch.
             </>
           }
-          subtitle='Every correct call is a step up the ladder — and every tier unlocks more.'
+          subtitle='Every correct prediction is a step up the ladder — and every tier unlocks more.'
         />
         {levels && levels.length > 0 && (
           <div className='relative mx-auto max-w-190'>

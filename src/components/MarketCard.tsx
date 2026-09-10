@@ -360,7 +360,7 @@ export default function MarketCard() {
               {stage === 'pick' && (
                 <div className='px-7.5 pt-5 pb-6.5'>
                   <div className='mb-3.5 text-xs font-bold uppercase tracking-[0.05em] text-success'>
-                    Make Today&apos;s Call
+                    Make Today&apos;s Prediction
                   </div>
                   <div className='mb-5.5 font-display text-[26px] leading-8 font-black text-ink'>
                     {todayQuestion!.text}
@@ -404,7 +404,7 @@ export default function MarketCard() {
                     </div>
                     <div className='text-center'>
                       <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                        Called by
+                        Predicted by
                       </div>
                       <div className='text-[15px] font-bold text-ink'>
                         {alreadyPredicted}
@@ -690,7 +690,7 @@ export default function MarketCard() {
                     You&apos;re locked in!
                   </div>
                   <div className='mb-4.5 text-[13px] text-muted'>
-                    Your {pickedSide?.toUpperCase()} call is saved. Come back
+                    Your {pickedSide?.toUpperCase()} prediction is saved. Come back
                     tomorrow for a new one.
                   </div>
 
