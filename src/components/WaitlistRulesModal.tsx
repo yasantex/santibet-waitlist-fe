@@ -56,16 +56,16 @@ function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launch
     {
       title: 'How to Play',
       items: [
-        'One Daily Call: Tap YES or NO on the daily gist before the timer runs out.',
+        'One Daily Prediction: Tap YES or NO on the daily gist before the timer runs out.',
         'Zero Deposit: No registration, no funding, and absolutely no payments required during pre-launch.',
-        'Earn Points: Every correct call moves you up the Founder Leaderboard and stacks extra draw entries.',
+        'Earn Points: Every correct prediction moves you up the Founder Leaderboard and stacks extra draw entries.',
       ],
     },
     {
       title: 'The Rewards',
       items: [
         `Daily & Weekly Payouts: Win up to ${dailyWeeklyLabel} in cash or airtime even before the official launch.`,
-        `Launch Day Draw: Every active daily call serves as a ticket toward the ${grandPrizeLabel} Grand Prize on ${launchDateLabel}.`,
+        `Launch Day Draw: Every active daily prediction serves as a ticket toward the ${grandPrizeLabel} Grand Prize on ${launchDateLabel}.`,
       ],
     },
     {

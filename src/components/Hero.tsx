@@ -4,15 +4,19 @@ import { useState } from 'react'
 import CountdownTimer from './CountdownTimer'
 import { Icon } from './icons'
 import WaitlistRulesModal from './WaitlistRulesModal'
-import { useActiveCampaign, useCampaignStats, useCampaignRules } from '../hooks/useCampaign'
+import {
+  useActiveCampaign,
+  useCampaignStats,
+  useCampaignRules,
+  useMe,
+} from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
-import { useAppSelector } from '../redux/hooks'
 
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
   const { data: rules } = useCampaignRules(activeCampaign?.slug)
-  const standing = useAppSelector((s) => s.campaign.standing)
+  const { data: standing } = useMe(activeCampaign?.slug)
   const [copied, setCopied] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
 
@@ -69,7 +73,7 @@ export default function Hero() {
           <div className='flex flex-col items-center gap-5 text-center md:items-start md:text-left'>
             <div className='inline-flex items-center gap-2 font-bold uppercase tracking-[0.06em] rounded-full border-[1.5px] border-dark px-4 py-1.75 text-xs text-dark dark:border-lime dark:text-lime'>
               <span className='animate-pulse-dot h-1.75 w-1.75 rounded-full bg-success' />
-              Pre-launch · New Call Drops Daily
+              Pre-launch · New Prediction Drops Daily
             </div>
 
             <h1 className='max-w-230 px-5 font-display italic text-[clamp(30px,8.5vw,59px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
@@ -84,14 +88,14 @@ export default function Hero() {
             </div>
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
-              One gist. One tap. Every correct call pulls you closer to{' '}
+              One event. One tap. Every correct prediction pulls you closer to{' '}
               <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> on
               launch day. No deposit, no wahala, no small print.
             </p>
             <div className='flex gap-2.5 items-center justify-center font-semibold rounded-full border border-border bg-surface px-5 py-2.5 text-sm w-fit text-ink md:justify-start'>
               <span>{prizePoolLabel} Pool today</span>
               <span className='text-border'>·</span>
-              <span>{predictedLabel} Calls Made</span>
+              <span>{predictedLabel} Predictions Made</span>
               {yesPercent != null && (
                 <>
                   <span className='text-border'>·</span>
@@ -186,11 +190,10 @@ export default function Hero() {
                 </div>
                 <div>
                   <div className='text-sm font-black text-ink'>
-                    Predict early. Rank Legendary.
+                    Predict Win, Recieve Rewards , Earn Points.
                   </div>
                   <div className='mt-0.5 text-xs font-medium text-muted leading-relaxed'>
-                    Founder Badge, priority access and bonus credits — gone the
-                    moment we launch.
+                    Founder Badge, priority access and bonus credits — all before launch date.
                   </div>
                 </div>
               </div>

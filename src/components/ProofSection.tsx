@@ -49,7 +49,7 @@ export default function ProofSection() {
               for launch day.
             </>
           }
-          subtitle='Real people, real calls, real payouts — happening on the app every single day.'
+          subtitle='Real people, real predictions, real payouts — happening on the app every single day.'
         />
 
           {/* Live activity panel */}

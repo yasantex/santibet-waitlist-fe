@@ -11,7 +11,7 @@ export default function Footer() {
             Don&apos;t just wait
           </div>
           <h2 className='mx-auto max-w-160 font-display italic text-[clamp(28px,4.5vw,44px)] font-black tracking-[-0.01em] text-ink'>
-            Make today&apos;s call.
+            Make today&apos;s prediction.
           </h2>
           <p className='mx-auto mt-4 max-w-125 text-[16.5px] text-muted font-medium'>
             Every prediction before launch is a step toward Founder status and
