@@ -13,6 +13,42 @@ import {
 import { formatMoney } from '../utils/money'
 import { useAppSelector } from '../redux/hooks'
 
+function WhatsAppIcon() {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      className='h-4 w-4'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={1.8}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+    >
+      <path d='M4 20l1.4-4.2A8 8 0 1 1 9 18.5L4 20Z' />
+      <path d='M8.5 9.3c0 3.1 2.5 5.6 5.6 5.6' />
+    </svg>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      className='h-4 w-4'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={1.8}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+    >
+      <circle cx='18' cy='5' r='2.5' />
+      <circle cx='6' cy='12' r='2.5' />
+      <circle cx='18' cy='19' r='2.5' />
+      <path d='m8.2 10.7 7.6-4.4M8.2 13.3l7.6 4.4' />
+    </svg>
+  )
+}
+
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
@@ -46,6 +82,11 @@ export default function Hero() {
     standing && typeof window !== 'undefined'
       ? `${window.location.origin}/?ref=${standing.referralCode}`
       : ''
+  const shareText =
+    'Join me on SantiBet’s pre-launch waitlist — predict daily and stack Founder points before we launch.'
+  const whatsappHref = referLink
+    ? `https://wa.me/?text=${encodeURIComponent(`${shareText} ${referLink}`)}`
+    : undefined
 
   async function handleCopy() {
     try {
@@ -55,6 +96,19 @@ export default function Hero() {
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
+  }
+
+  async function handleShare() {
+    if (!referLink) return
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: 'SantiBet', text: shareText, url: referLink })
+      } catch {
+        // user cancelled the share sheet — no-op
+      }
+    } else {
+      handleCopy()
+    }
   }
 
   const tickerItems = [
@@ -117,13 +171,13 @@ export default function Hero() {
             <div className='flex flex-col gap-2.5 items-center w-full max-w-100 md:max-w-none'>
               <a
                 href='#market'
-                className='shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink sm:px-10 sm:text-xl shadow-[0_6px_0_#8FC200] dark:text-[#10230a]!'
+                className='shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink transition-[filter,transform,box-shadow] sm:px-10 sm:text-xl shadow-[0_6px_0_#8FC200] hover:brightness-95 active:translate-y-1.5 active:shadow-none dark:text-[#10230a]!'
               >
                 Predict now →
               </a>
               <a
                 href='#market'
-                className='text-sm font-bold text-dark underline underline-offset-4 dark:text-lime'
+                className='text-sm font-bold text-dark underline underline-offset-4 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
               >
                 Join the waitlist — takes 10 seconds
               </a>
@@ -132,7 +186,7 @@ export default function Hero() {
                 <button
                   type='button'
                   onClick={() => setRulesOpen(true)}
-                  className='cursor-pointer font-bold text-dark underline underline-offset-2 dark:text-lime'
+                  className='cursor-pointer font-bold text-dark underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
                 >
                   Waitlist &amp; Prediction Rules
                 </button>
@@ -174,9 +228,28 @@ export default function Hero() {
                   <button
                     type='button'
                     onClick={handleCopy}
-                    className='shrink-0 rounded-lg bg-lime px-4 py-2.5 text-xs font-black text-lime-ink cursor-pointer'
+                    className='shrink-0 cursor-pointer rounded-lg bg-lime px-4 py-2.5 text-xs font-black text-lime-ink transition-[filter,transform] hover:brightness-95 active:scale-95'
                   >
                     {copied ? 'Copied!' : 'Copy link'}
+                  </button>
+                </div>
+                <div className='mt-2 flex gap-2'>
+                  <a
+                    href={whatsappHref}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-success bg-success/10 px-3 py-2.5 text-xs font-bold text-success transition-colors hover:bg-success/20 active:bg-success/30'
+                  >
+                    <WhatsAppIcon />
+                    WhatsApp
+                  </a>
+                  <button
+                    type='button'
+                    onClick={handleShare}
+                    className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-border bg-surface px-3 py-2.5 text-xs font-bold text-ink transition-colors hover:bg-surface-2 active:bg-surface-hover'
+                  >
+                    <ShareIcon />
+                    Share
                   </button>
                 </div>
               </div>
