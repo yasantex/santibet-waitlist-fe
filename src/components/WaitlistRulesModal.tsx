@@ -112,7 +112,7 @@ export default function WaitlistRulesModal({
         <button
           type='button'
           onClick={onClose}
-          className='w-full cursor-pointer rounded-xl bg-lime px-6 py-3.75 font-black text-lime-ink shadow-[0_5px_0_#8FC200] dark:text-[#10230a]!'
+          className='w-full cursor-pointer rounded-xl bg-lime px-6 py-3.75 font-black text-lime-ink transition-[filter,transform,box-shadow] shadow-[0_5px_0_#8FC200] hover:brightness-95 active:translate-y-1.25 active:shadow-none dark:text-[#10230a]!'
         >
           Got it, let&apos;s predict!
         </button>

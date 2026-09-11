@@ -20,7 +20,7 @@ export default function Footer() {
           <div className='mt-8 flex flex-wrap justify-center gap-2.5'>
             <a
               href='#market'
-              className='inline-block rounded-2xl bg-lime px-8 py-4 font-black text-lime-ink no-underline shadow-[0_6px_0_#8FC200] dark:text-[#10230a]!'
+              className='inline-block rounded-2xl bg-lime px-8 py-4 font-black text-lime-ink no-underline transition-[filter,transform,box-shadow] shadow-[0_6px_0_#8FC200] hover:brightness-95 active:translate-y-1.5 active:shadow-none dark:text-[#10230a]!'
             >
               Predict Now →
             </a>

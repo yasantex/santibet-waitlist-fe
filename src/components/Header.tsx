@@ -14,7 +14,7 @@ export default function Header() {
           type='button'
           onClick={handleLogoClick}
           aria-label='Scroll to top'
-          className='shrink-0 cursor-pointer'
+          className='shrink-0 cursor-pointer transition-opacity hover:opacity-80 active:opacity-60'
         >
           <Image
             src='/Santibet Logo.svg'
@@ -27,7 +27,7 @@ export default function Header() {
         </button>
         <a
           href='#market'
-          className='shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-base font-semibold text-lime-ink dark:text-[#10230a]! '
+          className='shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-base font-semibold text-lime-ink transition-[filter,transform] hover:brightness-95 active:scale-95 dark:text-[#10230a]! '
         >
           Predict now
         </a>
