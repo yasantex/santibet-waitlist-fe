@@ -11,12 +11,15 @@ import {
   useMe,
 } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
+import { useAppSelector } from '../redux/hooks'
 
 export default function Hero() {
   const { activeCampaign } = useActiveCampaign()
   const { data: stats } = useCampaignStats(activeCampaign?.slug)
   const { data: rules } = useCampaignRules(activeCampaign?.slug)
-  const { data: standing } = useMe(activeCampaign?.slug)
+  const { data: meStanding } = useMe(activeCampaign?.slug)
+  const cachedStanding = useAppSelector((s) => s.campaign.standing)
+  const standing = meStanding ?? cachedStanding
   const [copied, setCopied] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
 

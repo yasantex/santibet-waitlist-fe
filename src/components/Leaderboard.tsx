@@ -2,11 +2,14 @@
 
 import SectionHead from './SectionHead'
 import { useActiveCampaign, useLeaderboard, useMe } from '../hooks/useCampaign'
+import { useAppSelector } from '../redux/hooks'
 
 export default function Leaderboard() {
   const { activeCampaign } = useActiveCampaign()
   const { data, isLoading } = useLeaderboard(activeCampaign?.slug, 5)
-  const { data: standing } = useMe(activeCampaign?.slug)
+  const { data: meStanding } = useMe(activeCampaign?.slug)
+  const cachedStanding = useAppSelector((s) => s.campaign.standing)
+  const standing = meStanding ?? cachedStanding
   const rows = data?.data ?? []
 
   const remaining = activeCampaign
