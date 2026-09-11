@@ -119,13 +119,17 @@ export function useLeaderboard(slug: string | null | undefined, limit = 5) {
   })
 }
 
-/** The caller's own standing. Only worth asking once a device token exists from a prior verification. */
+/** The caller's own standing. Only worth asking once this device looks verified — either we
+ *  hold a device token (mobile clients get one in the confirm response body), or we already
+ *  have a standing in Redux from a previous confirm/me on this device (web clients only ever
+ *  get their token as a cookie, never in the body, so `standing` is the fallback signal). */
 export function useMe(slug: string | null | undefined) {
   const deviceToken = useAppSelector((state) => state.campaign.deviceToken)
+  const standing = useAppSelector((state) => state.campaign.standing)
   const headers = useCampaignAuthHeaders()
   return useSantibetQuery<ParticipantStanding>({
     path: `${CAMPAIGNS_BASE}/${slug}/me`,
-    enabled: Boolean(slug) && Boolean(deviceToken),
+    enabled: Boolean(slug) && (Boolean(deviceToken) || Boolean(standing)),
     headers,
     queryOptions: { retry: false },
   })
@@ -133,10 +137,11 @@ export function useMe(slug: string | null | undefined) {
 
 export function useWinnings() {
   const deviceToken = useAppSelector((state) => state.campaign.deviceToken)
+  const standing = useAppSelector((state) => state.campaign.standing)
   const headers = useCampaignAuthHeaders()
   return useSantibetQuery<{ data: Winning[] }>({
     path: `${CAMPAIGNS_BASE}/winnings`,
-    enabled: Boolean(deviceToken),
+    enabled: Boolean(deviceToken) || Boolean(standing),
     headers,
   })
 }

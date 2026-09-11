@@ -99,6 +99,7 @@ export const useSantibetQuery = <TData = unknown>({
       method: 'GET',
       headers: _headers,
       responseType: responseType || 'json',
+      withCredentials: true,
     }
     const response = await apiClient.request<TData>(config)
     return response.data

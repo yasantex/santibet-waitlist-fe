@@ -3,7 +3,8 @@
 import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
 import { Icon, type IconName } from './icons'
-import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
+import { useActiveCampaign, useCampaignRules, useMe } from '../hooks/useCampaign'
+import { useAppSelector } from '../redux/hooks'
 
 const LEVEL_ICON: Record<string, IconName> = {
   rookie: 'badge',
@@ -16,6 +17,9 @@ const LEVEL_ICON: Record<string, IconName> = {
 export default function FounderProgram() {
   const { activeCampaign } = useActiveCampaign()
   const { data: rules } = useCampaignRules(activeCampaign?.slug)
+  const { data: meStanding } = useMe(activeCampaign?.slug)
+  const cachedStanding = useAppSelector((s) => s.campaign.standing)
+  const standing = meStanding ?? cachedStanding
   const levels = rules?.levels.slice().sort((a, b) => a.minPoints - b.minPoints)
 
   return (
@@ -63,6 +67,24 @@ export default function FounderProgram() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )}
+        {standing && (
+          <div className='mx-auto mt-7 max-w-160'>
+            <div className='mb-2 text-center text-xs font-bold tracking-[0.08em] text-muted uppercase'>
+              Your current Rank
+            </div>
+            <div className='grid grid-cols-[36px_1fr_auto] items-center gap-3.5 rounded-xl border-[1.5px] border-dark bg-surface px-5.5 py-3.5 text-[14.5px] dark:border-lime'>
+              <span className='flex h-7 w-7 items-center justify-center rounded-full bg-lime text-sm font-bold text-lime-ink'>
+                {standing.rank != null
+                  ? String(standing.rank).padStart(2, '0')
+                  : '—'}
+              </span>
+              <span className='text-ink font-bold'>
+                Founder #{standing.participantNumber.toLocaleString()} (You)
+              </span>
+              <span className='text-dark font-bold'>{standing.points} pts</span>
             </div>
           </div>
         )}
