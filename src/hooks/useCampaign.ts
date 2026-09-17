@@ -24,6 +24,7 @@ import type {
 } from '../types/campaign'
 
 const CAMPAIGNS_BASE = '/api/campaigns'
+const ACTIVE_CAMPAIGN_SLUG = process.env.NEXT_PUBLIC_CAMPAIGN_SLUG
 
 /** Reads the first AWAITING_CODE-friendly message off an axios error from the campaigns API. */
 export function getApiErrorMessage(error: unknown, fallback: string) {
@@ -40,28 +41,19 @@ function useCampaignAuthHeaders(): Record<string, string> {
 }
 
 /**
- * Picks the campaign this coming-soon site should play — the running one if there
- * is one, otherwise the soonest upcoming one. Drafts/cancelled campaigns never show up here.
+ * The campaign this coming-soon site plays, fixed by NEXT_PUBLIC_CAMPAIGN_SLUG.
  */
 export function useActiveCampaign() {
-  const query = useSantibetQuery<{ data: Campaign[] }>({
-    path: `${CAMPAIGNS_BASE}/`,
+  const query = useSantibetQuery<Campaign>({
+    path: `${CAMPAIGNS_BASE}/${ACTIVE_CAMPAIGN_SLUG}`,
+    enabled: Boolean(ACTIVE_CAMPAIGN_SLUG),
     queryOptions: {
       staleTime: 30_000,
       refetchInterval: 60_000,
     },
   })
 
-  const activeCampaign = useMemo(() => {
-    const campaigns = query.data?.data ?? []
-    if (campaigns.length === 0) return null
-    const active = campaigns.find((c) => c.phase === 'ACTIVE')
-    if (active) return active
-    const upcoming = campaigns
-      .filter((c) => c.phase === 'UPCOMING')
-      .sort((a, b) => a.startsOn.localeCompare(b.startsOn))
-    return upcoming[0] ?? campaigns[0]
-  }, [query.data])
+  const activeCampaign = useMemo(() => query.data ?? null, [query.data])
 
   return { ...query, activeCampaign }
 }
