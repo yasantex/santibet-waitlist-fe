@@ -93,7 +93,7 @@ export default function ProofSection() {
                     Day {previous.campaignDay}
                   </span>
                   <span className='shrink-0 rounded-full bg-lime px-2.5 py-1 text-[10px] font-black uppercase text-lime-ink'>
-                    {previous.status === 'VOID' ? 'Voided' : 'Resolved'}
+                    {previous.status === 'VOID' ? 'Voided' : 'SETTLED'}
                   </span>
                 </div>
                 <div className='mb-4 font-display text-[17px] font-black leading-snug'>

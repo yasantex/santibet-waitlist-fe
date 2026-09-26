@@ -146,7 +146,7 @@ export default function Hero() {
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
               One event. One tap. Every correct prediction pulls you closer to{' '}
-              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> on
+              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> Jackpot on
               launch day. No deposit, no wahala, no small print.
             </p>
             <div className='flex gap-2.5 items-center justify-center font-semibold rounded-full border border-border bg-surface px-5 py-2.5 text-sm w-fit text-ink md:justify-start'>
@@ -266,7 +266,7 @@ export default function Hero() {
                 </div>
                 <div>
                   <div className='text-sm font-black text-ink'>
-                    Predict Win, Recieve Rewards , Earn Points.
+                    Predict and Win, Recieve Rewards , Earn Points.
                   </div>
                   <div className='mt-0.5 text-xs font-medium text-muted leading-relaxed'>
                     Founder Badge, priority access and bonus credits — all before launch date.

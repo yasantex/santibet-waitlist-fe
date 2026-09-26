@@ -405,7 +405,7 @@ export default function MarketCard() {
                     </div>
                     <div className='text-center'>
                       <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                        Predicted by
+                        Predictions made
                       </div>
                       <div className='text-[15px] font-bold text-ink'>
                         {alreadyPredicted}
@@ -413,10 +413,10 @@ export default function MarketCard() {
                     </div>
                     <div className='text-center'>
                       <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
-                        Prize pool today
+                        TODAY'S GIVEAWAY
                       </div>
                       <div className='text-[15px] font-bold text-ink'>
-                        {prizePoolLabel}
+                        {prizePoolLabel} AIRTIME & DATA
                       </div>
                     </div>
                   </div>
