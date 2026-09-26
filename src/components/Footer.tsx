@@ -14,8 +14,8 @@ export default function Footer() {
             Make today&apos;s prediction.
           </h2>
           <p className='mx-auto mt-4 max-w-125 text-[16.5px] text-muted font-medium'>
-            Every prediction before launch is a step toward Founder status and
-            a shot at ₦1,000,000.
+            Every correct prediction before launch gets you closer to Founder
+            status and puts you in the running for the ₦1,000,000 grand prize.
           </p>
           <div className='mt-8 flex flex-wrap justify-center gap-2.5'>
             <a
@@ -41,10 +41,7 @@ export default function Footer() {
           className='h-11 shrink-0 dark:invert'
           priority
         />
-        <div>
-          © {year} Awa Lawa Limited · SantiBet is not yet live · No deposit or
-          payment is required to take part
-        </div>
+        <div>©️ {year} Awa Lawa Limited · SantiBet is not yet live</div>
       </footer>
     </>
   )

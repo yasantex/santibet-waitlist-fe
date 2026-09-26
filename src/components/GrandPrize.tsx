@@ -30,19 +30,19 @@ export default function GrandPrize() {
 
   return (
     <section id='grand' className='scroll-mt-24 py-16'>
-      <div className='mx-auto max-w-300 px-6'>
+      <div className='mx-auto max-w-400 px-6'>
         <SectionHead
           kicker='Grand prize draw'
           title={
             <>
-              Every Correct Prediction
+              Get Your Prediction right.
               <br />
-              leads to Jacpot Win.
+              Get Into the Launch-Day Prize Draw.
             </>
           }
           subtitle={
             totalWinners
-              ? `${totalWinners} winners walk away on launch day — not one lucky person, ${totalWinners}.`
+              ? `${totalWinners} winners walk away on launch day — including a ${headline ? formatMoney(headline.amount) : '—'} grand prize winner.`
               : 'Multiple winners walk away on launch day — not just one.'
           }
         />
@@ -58,7 +58,14 @@ export default function GrandPrize() {
           ) : (
             <>
               <div className='relative font-display text-[clamp(38px,6.5vw,58px)] font-black tracking-[-0.01em] text-white dark:text-ink'>
-                {headline ? formatMoney(headline.amount) : '—'}
+                {headline
+                  ? formatMoney({
+                      ...headline.amount,
+                      amount: String(
+                        Number(headline.amount.amount) + 500000 * 100,
+                      ),
+                    })
+                  : '—'}
               </div>
               <div className='relative mt-2 text-xs font-bold tracking-[0.08em] text-lime uppercase'>
                 {headline
@@ -110,9 +117,9 @@ export default function GrandPrize() {
               )}
 
               <div className='relative mt-5.5 border-t border-dashed border-white/15 pt-4 text-left text-[15.5px] leading-relaxed text-white/55 dark:border-border dark:text-muted'>
-                Welcome bonus prizes are wagering credits for use on SantiBet.
-                Terms and conditions apply — maximum payout amounts apply per
-                tier as stated above.
+                Each correct prediction qualifies for the launch-day prize draw.
+                21 winners will be selected from eligible correct predictions.
+                Terms and conditions apply.
               </div>
             </>
           )}

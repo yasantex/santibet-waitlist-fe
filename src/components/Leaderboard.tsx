@@ -48,11 +48,11 @@ export default function Leaderboard() {
                 >
                   {i < 3 ? (
                     <span className='flex h-7 w-7 items-center justify-center rounded-full bg-lime text-sm font-bold text-lime-ink'>
-                      {String(entry.rank ?? i + 1).padStart(2, '0')}
+                      {String(i + 1).padStart(2, '0')}
                     </span>
                   ) : (
                     <span className='flex h-7 w-7 items-center justify-center rounded-full bg-dark text-sm font-bold text-lime dark:border dark:border-border dark:bg-surface-2'>
-                      {String(entry.rank ?? i + 1).padStart(2, '0')}
+                      {String(i + 1).padStart(2, '0')}
                     </span>
                   )}
                   <span className='text-ink font-bold'>

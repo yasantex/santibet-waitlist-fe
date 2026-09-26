@@ -17,17 +17,17 @@ export const referSteps: ReferStep[] = [
   {
     num: '01',
     what: 'Drop your link',
-    sub: "It's generated the second you make your first prediction.",
+    sub: "Your unique referral link is generated when you make your first prediction.",
   },
   {
     num: '02',
-    what: 'They make their prediction',
-    sub: "One YES or NO with their number, and it's counted.",
+    what: 'They make a prediction',
+    sub: "They make their first YES or NO prediction, and the referral counts.",
   },
   {
     num: '03',
-    what: 'You both cash in',
-    sub: '+5 Founder points each, plus a jump up the leaderboard.',
+    what: 'You both earn points',
+    sub: '+5 Founder Points each, helping you climb the leaderboard.',
   },
 ]
 
