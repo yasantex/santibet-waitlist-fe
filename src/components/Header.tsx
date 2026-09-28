@@ -27,7 +27,7 @@ export default function Header() {
         </button>
         <a
           href='#market'
-          className='shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-base font-semibold text-lime-ink transition-[filter,transform] hover:brightness-95 active:scale-95 dark:text-[#10230a]! '
+          className='btn-lift shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-base font-semibold text-lime-ink hover:bg-[#cfff3d] dark:text-[#10230a]!'
         >
           Predict now
         </a>

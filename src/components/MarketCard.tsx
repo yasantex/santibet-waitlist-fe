@@ -372,7 +372,7 @@ export default function MarketCard() {
                       type='button'
                       onClick={() => handlePick('yes')}
                       aria-pressed={pickedSide === 'yes'}
-                      className='relative flex-1 cursor-pointer overflow-hidden rounded-xl border-2 border-dark bg-lime px-3.5 py-4 text-left text-[19px] font-black text-lime-ink transition-[filter,transform] hover:brightness-95 active:scale-[0.98] dark:border-lime-ink'
+                      className='btn-lift relative flex-1 overflow-hidden rounded-xl border-2 border-dark bg-lime px-3.5 py-4 text-left text-[19px] font-black text-lime-ink hover:bg-[#cfff3d] dark:border-lime-ink'
                     >
                       <span className='relative z-10 block'>YES</span>
                       <span className='relative z-10 mt-1 block text-[13px] font-semibold text-lime-ink/70'>
@@ -384,7 +384,7 @@ export default function MarketCard() {
                       type='button'
                       onClick={() => handlePick('no')}
                       aria-pressed={pickedSide === 'no'}
-                      className='relative flex-1 cursor-pointer overflow-hidden rounded-xl border-2 border-border bg-surface px-3.5 py-4 text-left font-display text-[19px] font-black tracking-wide text-ink transition-[background-color,transform] hover:bg-surface-2 active:scale-[0.98]'
+                      className='btn-lift relative flex-1 overflow-hidden rounded-xl border-2 border-border bg-surface px-3.5 py-4 text-left font-display text-[19px] font-black tracking-wide text-ink hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
                     >
                       <span className='relative z-10 block'>NO</span>
                       <span className='relative z-10 mt-1 block text-[13px] font-semibold text-muted'>
@@ -444,7 +444,7 @@ export default function MarketCard() {
                         setPhone('')
                         setErrorMsg(null)
                       }}
-                      className='mb-4 block cursor-pointer text-left text-xs font-bold text-dark underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
+                      className='link-action mb-4 block text-left text-xs font-bold text-dark dark:text-lime'
                     >
                       {changingPhone
                         ? 'Use my saved number instead'
@@ -493,7 +493,7 @@ export default function MarketCard() {
                     disabled={!canSubmit || submitting}
                     className={`w-full rounded-xl px-6 py-3.75 font-black transition-[filter,transform,box-shadow,background-color] ${
                       canSubmit && !submitting
-                        ? 'cursor-pointer bg-lime text-lime-ink shadow-[0_5px_0_#8FC200] hover:brightness-95 active:translate-y-1.25 active:shadow-none'
+                        ? 'btn-3d [--btn-depth:5px] bg-lime text-lime-ink'
                         : 'cursor-not-allowed bg-border text-neutral-10'
                     }`}
                   >
@@ -515,7 +515,7 @@ export default function MarketCard() {
                     <button
                       type='button'
                       onClick={() => setRulesOpen(true)}
-                      className='cursor-pointer font-bold text-dark underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
+                      className='link-action font-bold text-dark dark:text-lime'
                     >
                       Waitlist &amp; Prediction Rules
                     </button>
@@ -533,7 +533,7 @@ export default function MarketCard() {
                       setEmailSent(false)
                       setErrorMsg(null)
                     }}
-                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted transition-opacity hover:opacity-80 active:opacity-60'
+                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted transition-colors hover:text-[var(--foreground)] hover:underline hover:decoration-lime hover:decoration-2 hover:underline-offset-4 active:opacity-70'
                   >
                     ← Change pick
                   </button>
@@ -581,7 +581,7 @@ export default function MarketCard() {
                     className={`mb-4 text-xs font-bold underline underline-offset-2 transition-opacity ${
                       resendMutation.isPending || resendCooldown > 0
                         ? 'cursor-not-allowed text-neutral-10'
-                        : 'cursor-pointer text-dark hover:opacity-80 active:opacity-60 dark:text-lime'
+                        : 'link-action text-dark dark:text-lime'
                     }`}
                   >
                     {resendMutation.isPending
@@ -598,7 +598,7 @@ export default function MarketCard() {
                           <button
                             type='button'
                             onClick={() => setEmailFallbackOpen(true)}
-                            className='block cursor-pointer text-xs font-bold text-dark underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
+                            className='link-action block text-xs font-bold text-dark dark:text-lime'
                           >
                             Still no code? Request it by email
                           </button>
@@ -626,7 +626,7 @@ export default function MarketCard() {
                                 className={`shrink-0 rounded-xl px-4 py-2 text-sm font-black transition-[filter,transform,background-color] ${
                                   EMAIL_REGEX.test(email.trim()) &&
                                   !emailVerificationMutation.isPending
-                                    ? 'cursor-pointer bg-lime text-lime-ink hover:brightness-95 active:scale-95'
+                                    ? 'btn-lift bg-lime text-lime-ink hover:bg-[#cfff3d]'
                                     : 'cursor-not-allowed bg-border text-neutral-10'
                                 }`}
                               >
@@ -652,7 +652,7 @@ export default function MarketCard() {
                     disabled={code.trim().length !== CODE_LENGTH || submitting}
                     className={`w-full rounded-xl px-6 py-3.75 font-black transition-[filter,transform,box-shadow,background-color] ${
                       code.trim().length === CODE_LENGTH && !submitting
-                        ? 'cursor-pointer bg-lime text-lime-ink shadow-[0_5px_0_#8FC200] hover:brightness-95 active:translate-y-1.25 active:shadow-none'
+                        ? 'btn-3d [--btn-depth:5px] bg-lime text-lime-ink'
                         : 'cursor-not-allowed bg-border text-neutral-10'
                     }`}
                   >
@@ -675,7 +675,7 @@ export default function MarketCard() {
                       setEmailSent(false)
                       setErrorMsg(null)
                     }}
-                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted transition-opacity hover:opacity-80 active:opacity-60'
+                    className='mt-3 block w-full cursor-pointer text-center text-xs font-bold text-muted transition-colors hover:text-[var(--foreground)] hover:underline hover:decoration-lime hover:decoration-2 hover:underline-offset-4 active:opacity-70'
                   >
                     ← Wrong number?
                   </button>
@@ -731,10 +731,10 @@ export default function MarketCard() {
                     <button
                       type='button'
                       onClick={handleCopy}
-                      className={`shrink-0 cursor-pointer rounded-lg px-3.5 py-2 text-[11.5px] font-black transition-[filter,transform] active:scale-95 ${
+                      className={`btn-lift shrink-0 rounded-lg px-3.5 py-2 text-[11.5px] font-black ${
                         copied
-                          ? 'bg-success text-white hover:brightness-95'
-                          : 'bg-dark text-white hover:brightness-125 dark:bg-lime dark:text-lime-ink dark:hover:brightness-95'
+                          ? 'bg-success text-white'
+                          : 'bg-dark text-white hover:bg-dark-2 dark:bg-lime dark:text-lime-ink dark:hover:bg-[#cfff3d]'
                       }`}
                     >
                       {copied ? 'Copied!' : 'Copy'}
@@ -746,7 +746,7 @@ export default function MarketCard() {
                       href={whatsappHref}
                       target='_blank'
                       rel='noreferrer'
-                      className='flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success transition-colors hover:bg-success/20 active:bg-success/30'
+                      className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
                     >
                       <WhatsAppIcon />
                       WhatsApp
@@ -754,7 +754,7 @@ export default function MarketCard() {
                     <button
                       type='button'
                       onClick={handleCopy}
-                      className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-border bg-surface px-3 py-3 text-[12.5px] font-bold text-ink transition-colors hover:bg-surface-2 active:bg-surface-hover'
+                      className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-border bg-surface px-3 py-3 text-[12.5px] font-bold text-ink hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
                     >
                       🔗 Copy Link
                     </button>
