@@ -142,7 +142,7 @@ export default function ProofSection() {
                     href={previous.evidenceUrl}
                     target='_blank'
                     rel='noreferrer'
-                    className='mt-4 inline-block text-xs font-bold text-white/70 underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-muted'
+                    className='mt-4 inline-block text-xs font-bold text-white/70 underline underline-offset-2 transition-colors hover:text-white hover:decoration-lime hover:decoration-2 active:opacity-70 dark:text-muted dark:hover:text-[var(--foreground)]'
                   >
                     View evidence
                   </a>

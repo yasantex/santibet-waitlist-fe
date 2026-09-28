@@ -54,7 +54,7 @@ export default function FounderProgram() {
                     key={level.key}
                     onClick={() => setSelectedLevel(level.key)}
                     aria-label={`What is the ${level.name} tier?`}
-                    className='flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center transition-colors hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
+                    className='btn-lift flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center hover:border-dark dark:hover:border-lime'
                   >
                     <div
                       className={`flex h-13 w-13 items-center justify-center rounded-full ${
