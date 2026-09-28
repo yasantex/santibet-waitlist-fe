@@ -146,7 +146,7 @@ export default function Hero() {
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
               One event. One tap. Every correct prediction pulls you closer to{' '}
-              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> on
+              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> Jackpot on
               launch day. No deposit, no wahala, no small print.
             </p>
             <div className='flex gap-2.5 items-center justify-center font-semibold rounded-full border border-border bg-surface px-5 py-2.5 text-sm w-fit text-ink md:justify-start'>
@@ -171,13 +171,13 @@ export default function Hero() {
             <div className='flex flex-col gap-2.5 items-center w-full max-w-100 md:max-w-none'>
               <a
                 href='#market'
-                className='shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink transition-[filter,transform,box-shadow] sm:px-10 sm:text-xl shadow-[0_6px_0_#8FC200] hover:brightness-95 active:translate-y-1.5 active:shadow-none dark:text-[#10230a]!'
+                className='btn-3d shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink sm:px-10 sm:text-xl dark:text-[#10230a]!'
               >
                 Predict now →
               </a>
               <a
                 href='#market'
-                className='text-sm font-bold text-dark underline underline-offset-4 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
+                className='link-action text-sm font-bold text-dark dark:text-lime'
               >
                 Join the waitlist — takes 10 seconds
               </a>
@@ -186,7 +186,7 @@ export default function Hero() {
                 <button
                   type='button'
                   onClick={() => setRulesOpen(true)}
-                  className='cursor-pointer font-bold text-dark underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-lime'
+                  className='link-action font-bold text-dark dark:text-lime'
                 >
                   Waitlist &amp; Prediction Rules
                 </button>
@@ -228,7 +228,7 @@ export default function Hero() {
                   <button
                     type='button'
                     onClick={handleCopy}
-                    className='shrink-0 cursor-pointer rounded-lg bg-lime px-4 py-2.5 text-xs font-black text-lime-ink transition-[filter,transform] hover:brightness-95 active:scale-95'
+                    className='btn-lift shrink-0 rounded-lg bg-lime px-4 py-2.5 text-xs font-black text-lime-ink hover:bg-[#cfff3d]'
                   >
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
@@ -238,7 +238,7 @@ export default function Hero() {
                     href={whatsappHref}
                     target='_blank'
                     rel='noreferrer'
-                    className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-success bg-success/10 px-3 py-2.5 text-xs font-bold text-success transition-colors hover:bg-success/20 active:bg-success/30'
+                    className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-success bg-success/10 px-3 py-2.5 text-xs font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
                   >
                     <WhatsAppIcon />
                     WhatsApp
@@ -246,7 +246,7 @@ export default function Hero() {
                   <button
                     type='button'
                     onClick={handleShare}
-                    className='flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-border bg-surface px-3 py-2.5 text-xs font-bold text-ink transition-colors hover:bg-surface-2 active:bg-surface-hover'
+                    className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-border bg-surface px-3 py-2.5 text-xs font-bold text-ink hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
                   >
                     <ShareIcon />
                     Share
@@ -266,7 +266,7 @@ export default function Hero() {
                 </div>
                 <div>
                   <div className='text-sm font-black text-ink'>
-                    Predict Win, Recieve Rewards , Earn Points.
+                    Predict and Win, Recieve Rewards , Earn Points.
                   </div>
                   <div className='mt-0.5 text-xs font-medium text-muted leading-relaxed'>
                     Founder Badge, priority access and bonus credits — all before launch date.

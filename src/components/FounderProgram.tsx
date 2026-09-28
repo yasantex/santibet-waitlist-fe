@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
+import LevelInfoModal from './LevelInfoModal'
 import { Icon, type IconName } from './icons'
 import { useActiveCampaign, useCampaignRules, useMe } from '../hooks/useCampaign'
 import { useAppSelector } from '../redux/hooks'
@@ -9,9 +11,13 @@ import { useAppSelector } from '../redux/hooks'
 const LEVEL_ICON: Record<string, IconName> = {
   rookie: 'badge',
   rising: 'star',
+  insider: 'star',
   pro: 'trophy',
+  analyst: 'target',
   elite: 'shield',
+  strategist: 'shield',
   legend: 'crown',
+  oracle: 'crown',
 }
 
 export default function FounderProgram() {
@@ -21,6 +27,7 @@ export default function FounderProgram() {
   const cachedStanding = useAppSelector((s) => s.campaign.standing)
   const standing = meStanding ?? cachedStanding
   const levels = rules?.levels.slice().sort((a, b) => a.minPoints - b.minPoints)
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
 
   return (
     <section id='founder' className='scroll-mt-24 py-16'>
@@ -39,12 +46,15 @@ export default function FounderProgram() {
         {levels && levels.length > 0 && (
           <div className='relative mx-auto max-w-190'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-2.5 lg:grid-cols-3'>
-              {levels.map((level) => {
-                const isTop = level.key === 'legend'
+              {levels.map((level, i) => {
+                const isTop = i === levels.length - 1
                 return (
-                  <div
+                  <button
+                    type='button'
                     key={level.key}
-                    className='flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center'
+                    onClick={() => setSelectedLevel(level.key)}
+                    aria-label={`What is the ${level.name} tier?`}
+                    className='btn-lift flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center hover:border-dark dark:hover:border-lime'
                   >
                     <div
                       className={`flex h-13 w-13 items-center justify-center rounded-full ${
@@ -64,10 +74,21 @@ export default function FounderProgram() {
                     <div className='text-sm font-semibold text-muted'>
                       {level.minPoints}+ pts
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
+            <div className='mt-3 text-center text-xs font-semibold text-muted'>
+              Tap a tier to see what it means and how to reach it.
+            </div>
+            <LevelInfoModal
+              open={selectedLevel != null}
+              onClose={() => setSelectedLevel(null)}
+              levels={levels}
+              selectedKey={selectedLevel}
+              scoring={rules?.scoring}
+              myPoints={standing?.points}
+            />
           </div>
         )}
         {standing && (

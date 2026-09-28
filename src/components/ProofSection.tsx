@@ -93,7 +93,7 @@ export default function ProofSection() {
                     Day {previous.campaignDay}
                   </span>
                   <span className='shrink-0 rounded-full bg-lime px-2.5 py-1 text-[10px] font-black uppercase text-lime-ink'>
-                    {previous.status === 'VOID' ? 'Voided' : 'Resolved'}
+                    {previous.status === 'VOID' ? 'Voided' : 'SETTLED'}
                   </span>
                 </div>
                 <div className='mb-4 font-display text-[17px] font-black leading-snug'>
@@ -142,7 +142,7 @@ export default function ProofSection() {
                     href={previous.evidenceUrl}
                     target='_blank'
                     rel='noreferrer'
-                    className='mt-4 inline-block text-xs font-bold text-white/70 underline underline-offset-2 transition-opacity hover:opacity-80 active:opacity-60 dark:text-muted'
+                    className='mt-4 inline-block text-xs font-bold text-white/70 underline underline-offset-2 transition-colors hover:text-white hover:decoration-lime hover:decoration-2 active:opacity-70 dark:text-muted dark:hover:text-[var(--foreground)]'
                   >
                     View evidence
                   </a>

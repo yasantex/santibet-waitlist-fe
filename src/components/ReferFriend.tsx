@@ -37,12 +37,12 @@ export default function ReferFriend() {
           kicker='Refer A Friend'
           title={
             <>
-              Climb faster
+             Bring friends
               <br />
-              with backup.
+             Move up faster.
             </>
           }
-          subtitle='Every friend who joins and makes a prediction moves you both up the board.'
+          subtitle='Every friend who joins and makes a prediction earns you both +5 Founder Points — and helps you climb the leaderboard.'
         />
 
         <div className='mx-auto mb-10 grid max-w-225 grid-cols-1 gap-5 sm:grid-cols-3'>
