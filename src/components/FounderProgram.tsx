@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
 import LevelInfoModal from './LevelInfoModal'
+import { trackEvent } from '../utils/analytics'
 import { Icon, type IconName } from './icons'
 import { useActiveCampaign, useCampaignRules, useMe } from '../hooks/useCampaign'
 import { useAppSelector } from '../redux/hooks'
@@ -36,9 +37,9 @@ export default function FounderProgram() {
           kicker='Founder Tiers'
           title={
             <>
-              Rookie today.
+              Start as a Rookie.
               <br />
-              Legendary by launch.
+              Climb your way up.
             </>
           }
           subtitle='Every correct prediction is a step up the ladder — and every tier unlocks more.'
@@ -52,7 +53,10 @@ export default function FounderProgram() {
                   <button
                     type='button'
                     key={level.key}
-                    onClick={() => setSelectedLevel(level.key)}
+                    onClick={() => {
+                      setSelectedLevel(level.key)
+                      trackEvent({ event: 'founder_tier_opened', tier: level.key })
+                    }}
                     aria-label={`What is the ${level.name} tier?`}
                     className='btn-lift flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center hover:border-dark dark:hover:border-lime'
                   >
@@ -133,7 +137,7 @@ export default function FounderProgram() {
         </div>
 
         <div className='mx-auto mt-9 max-w-140 border-t border-dashed border-border pt-5 text-center  text-[16.5px] text-success'>
-          These rewards will never be available to users who join after launch.
+          Founder perks are reserved for users who join before launch.
         </div>
       </div>
     </section>

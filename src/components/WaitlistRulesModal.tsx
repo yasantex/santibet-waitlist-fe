@@ -64,7 +64,7 @@ function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launch
     {
       title: 'The Rewards',
       items: [
-        `Daily & Weekly Payouts: Win up to ${dailyWeeklyLabel} in cash or airtime even before the official launch.`,
+        `Daily & Weekly Payouts: Earn up to ${dailyWeeklyLabel} in cash or airtime even before the official launch.`,
         `Launch Day Draw: Every active daily prediction serves as a ticket toward the ${grandPrizeLabel} Grand Prize on ${launchDateLabel}.`,
       ],
     },
@@ -74,6 +74,14 @@ function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launch
         'Just for Fun: Pre-launch predictions are 100% free and meant to test your crowd instincts.',
         'Fair Play: One account per person. Smart tracking is active to keep the leaderboard fair for all Founders.',
         'No Guarantees: Payout values follow strict tier limits. Live sports and market outcomes resolve conclusively based on official final data feeds.',
+      ],
+    },
+    {
+      title: 'Privacy & Analytics',
+      items: [
+        'Analytics Cookies: We use Google Analytics, through Google Tag Manager, to understand how people use this page — such as visits, predictions made and links shared. This uses cookies and similar technologies.',
+        'What We Collect: Usage data like pages viewed, device and browser type, approximate location and the actions you take on the page. We never send your phone number, email or verification codes to Google Analytics.',
+        'Your Agreement: By continuing to use this page and making a prediction, you agree to this use of analytics. You can block or clear cookies in your browser settings at any time.',
       ],
     },
   ]

@@ -54,7 +54,7 @@ export default function CountdownTimer() {
         className='pointer-events-none absolute -top-15 -right-15 h-45 w-45 rounded-full bg-dark-2 opacity-70 dark:bg-lime dark:opacity-[0.06]'
       />
       <div className='relative mb-3.5 text-[11px] font-bold tracking-[0.12em] uppercase text-lime'>
-        Time to Lunch
+        Launches in
       </div>
       <div className='relative flex gap-2.5'>
         <FlipUnit value={days} label='Days' />

@@ -69,12 +69,12 @@ export default function PrizesSection() {
           kicker='Rewards'
           title={
             <>
-              Small stakes.
+              Small predictions.
               <br />
-              Real wins.
+              Real rewards.
             </>
           }
-          subtitle="You don't need launch day to start winning — daily and weekly payouts are already running."
+          subtitle="You don't need launch day to start earning — daily and weekly rewards are already running."
         />
         {!periods ? (
           <div className='py-6 text-center text-lg text-neutral-10'>

@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { trackEvent } from '../utils/analytics'
 
 export default function Header() {
   function handleLogoClick() {
@@ -27,9 +28,10 @@ export default function Header() {
         </button>
         <a
           href='#market'
-          className='btn-lift shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-base font-semibold text-lime-ink hover:bg-[#cfff3d] dark:text-[#10230a]!'
+          onClick={() => trackEvent({ event: 'cta_click', cta_name: 'header_predict_now' })}
+          className='btn-lift shrink-0 font-outfit! rounded-full w-fit bg-lime px-4 py-1.5 text-sm sm:text-base font-semibold text-lime-ink hover:bg-[#cfff3d] dark:text-[#10230a]!'
         >
-          Predict now
+          Make Today&apos;s Prediction
         </a>
       </div>
     </header>
