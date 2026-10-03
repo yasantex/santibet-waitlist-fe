@@ -136,8 +136,8 @@ export default function Hero() {
               Pre-launch · New Predictions Daily
             </div>
 
-            <h1 className='max-w-230 px-5 font-display italic text-[clamp(30px,8.5vw,59px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
-              Predict. Win. <br className='md:block hidden' />
+            <h1 className='max-w-230 px-5 font-display italic text-[clamp(35px,8.5vw,72px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
+              Predict.  Win. <br className='md:block hidden' />
               <span className='text-dark dark:text-lime'>Repeat.</span>
             </h1>
 
@@ -188,13 +188,6 @@ export default function Hero() {
                 className='btn-3d shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink sm:px-10 sm:text-xl dark:text-[#10230a]!'
               >
                 Make Today&apos;s Prediction →
-              </a>
-              <a
-                href='#market'
-                onClick={() => trackEvent({ event: 'cta_click', cta_name: 'hero_join_waitlist' })}
-                className='link-action text-sm font-bold text-dark dark:text-lime'
-              >
-                Join the Waitlist
               </a>
               <div className='text-center text-[11px] font-medium text-muted'>
                 By continuing, you agree to our{' '}

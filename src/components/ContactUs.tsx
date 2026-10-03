@@ -22,12 +22,9 @@ export default function ContactUs() {
           kicker='Contact us'
           title={
             <>
-              Need a hand?
-              <br />
               Talk to us.
             </>
           }
-          subtitle="Questions about your prediction, points or prizes? Our support team is here to help."
         />
 
         <a

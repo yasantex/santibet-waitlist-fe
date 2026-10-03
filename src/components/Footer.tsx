@@ -9,7 +9,7 @@ export default function Footer() {
 
   return (
     <>
-      <section className='pt-18 pb-14 text-center'>
+      {/* <section className='pt-18 pb-14 text-center'>
         <div className='mx-auto max-w-270 px-6'>
           <div className='mb-3 text-xs font-black tracking-[0.1em] text-dark uppercase dark:text-lime'>
             Don&apos;t just wait for launch.
@@ -35,7 +35,7 @@ export default function Footer() {
             required
           </div>
         </div>
-      </section>
+      </section> */}
 
       <footer className='border-t border-border px-6 py-8 text-center flex flex-col items-center justify-center text-base gap-2.5 text-neutral-10'>
         <Image

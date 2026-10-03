@@ -24,8 +24,7 @@ export default function Leaderboard() {
           title={
             <>
               Your name.
-              <br />
-              Your rank. Your Founder status.
+              Your rank.
             </>
           }
           subtitle='The first 100 Founders get bragging rights — and the perks to back it up.'
