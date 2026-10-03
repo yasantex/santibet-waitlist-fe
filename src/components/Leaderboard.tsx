@@ -24,11 +24,10 @@ export default function Leaderboard() {
           title={
             <>
               Your name.
-              <br />
-              Your rank. Forever.
+              Your rank.
             </>
           }
-          subtitle='The first 100 Founders get permanent bragging rights — and the perks to back it up.'
+          subtitle='The first 100 Founders get bragging rights — and the perks to back it up.'
         />
         <div className='mx-auto max-w-160 overflow-hidden rounded-xl border border-border bg-surface'>
           {isLoading ? (

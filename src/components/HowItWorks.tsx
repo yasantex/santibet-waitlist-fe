@@ -10,12 +10,12 @@ export default function HowItWorks() {
           kicker='How it works'
           title={
             <>
-              Five stages.
+              Predict today. Build your rank.
               <br />
-              One big finish.
+              Unlock rewards.
             </>
           }
-          subtitle='Small wins today, a legacy rank by launch. Every correct prediction moves the needle.'
+          subtitle='Daily rewards today, a Founder rank by launch. Every correct prediction counts.'
         />
         <div className='mx-auto flex max-w-100 md:max-w-none flex-col gap-2.5 md:grid md:grid-cols-5'>
           {journeySteps.map((step) => (

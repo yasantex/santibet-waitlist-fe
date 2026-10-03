@@ -12,6 +12,7 @@ import {
 } from '../hooks/useCampaign'
 import { formatMoney } from '../utils/money'
 import { useAppSelector } from '../redux/hooks'
+import { trackEvent } from '../utils/analytics'
 
 function WhatsAppIcon() {
   return (
@@ -88,6 +89,11 @@ export default function Hero() {
     ? `https://wa.me/?text=${encodeURIComponent(`${shareText} ${referLink}`)}`
     : undefined
 
+  function handleCopyClick() {
+    handleCopy()
+    trackEvent({ event: 'referral_link_copied', cta_name: 'hero_copy_link' })
+  }
+
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(referLink)
@@ -100,6 +106,7 @@ export default function Hero() {
 
   async function handleShare() {
     if (!referLink) return
+    trackEvent({ event: 'referral_share_click', cta_name: 'hero_share', share_channel: 'native' })
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ title: 'SantiBet', text: shareText, url: referLink })
@@ -113,13 +120,9 @@ export default function Hero() {
 
   const tickerItems = [
     'Predict Daily',
-    'Win Naira',
-    'Win Data',
-    'Zero Deposit',
-    'Win Points',
-    'Win Airtime',
-    'Launching Soon',
-    'Win Cash',
+    'Earn Points',
+    'Climb the Ranks',
+    'Unlock Rewards',
   ]
 
   return (
@@ -130,37 +133,47 @@ export default function Hero() {
           <div className='flex flex-col items-center gap-5 text-center md:items-start md:text-left'>
             <div className='inline-flex items-center gap-2 font-bold uppercase tracking-[0.06em] rounded-full border-[1.5px] border-dark px-4 py-1.75 text-xs text-dark dark:border-lime dark:text-lime'>
               <span className='animate-pulse-dot h-1.75 w-1.75 rounded-full bg-success' />
-              Pre-launch · New Prediction Drops Daily
+              Pre-launch · New Predictions Daily
             </div>
 
-            <h1 className='max-w-230 px-5 font-display italic text-[clamp(30px,8.5vw,59px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
-              Join the <br className='md:block hidden' /> pre-launch{' '}
-              <span className='text-dark dark:text-lime'>waitlist.</span>
+            <h1 className='max-w-230 px-5 font-display italic text-[clamp(35px,8.5vw,72px)] leading-[0.94] font-black tracking-[-0.02em] text-ink uppercase md:px-0'>
+              Predict.  Win. <br className='md:block hidden' />
+              <span className='text-dark dark:text-lime'>Repeat.</span>
             </h1>
 
             <div className='-rotate-2 mt-1'>
               <span className='inline-block rounded-md bg-lime px-6 py-2.5 font-display italic text-lg sm:text-xl font-black tracking-[-0.01em] text-lime-ink shadow-[4px_4px_0_var(--color-dark)] dark:shadow-[4px_4px_0_var(--color-surface-2)]'>
-                Predict. Win. Repeat.
+                No deposit. No payment required.
               </span>
             </div>
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
-              One event. One tap. Every correct prediction pulls you closer to{' '}
-              <strong className='text-ink font-bold'>{grandPrizeLabel}</strong> Jackpot on
-              launch day. No deposit, no wahala, no small print.
+              Make predictions every day, earn Founder Points and unlock rewards.
+              Every correct prediction earns you another chance to qualify for the{' '}
+              <strong className='text-ink font-bold'>
+                {grandPrizeLabel} launch-day grand prize.
+              </strong>
             </p>
-            <div className='flex gap-2.5 items-center justify-center font-semibold rounded-full border border-border bg-surface px-5 py-2.5 text-sm w-fit text-ink md:justify-start'>
-              <span>{prizePoolLabel} Pool today</span>
-              <span className='text-border'>·</span>
-              <span>{predictedLabel} Predictions Made</span>
-              {yesPercent != null && (
-                <>
-                  <span className='text-border'>·</span>
-                  <span className='text-success font-extrabold'>
-                    {yesPercent}% said Yes
-                  </span>
-                </>
-              )}
+            <div className='w-full max-w-110 rounded-2xl border border-border bg-surface px-5 py-3.5 text-left'>
+              <div className='mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted'>
+                Today&apos;s Prediction
+              </div>
+              <div className='grid grid-cols-3 gap-3 divide-x divide-border'>
+                <div>
+                  <div className='text-lg font-black text-ink sm:text-xl'>{prizePoolLabel}</div>
+                  <div className='text-xs font-semibold text-muted'>Prize Pool</div>
+                </div>
+                <div className='pl-3'>
+                  <div className='text-lg font-black text-ink sm:text-xl'>{predictedLabel}</div>
+                  <div className='text-xs font-semibold text-muted'>Predictions</div>
+                </div>
+                <div className='pl-3'>
+                  <div className='text-lg font-black text-success sm:text-xl'>
+                    {yesPercent != null ? `${yesPercent}%` : '—'}
+                  </div>
+                  <div className='text-xs font-semibold text-muted'>YES</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -171,21 +184,19 @@ export default function Hero() {
             <div className='flex flex-col gap-2.5 items-center w-full max-w-100 md:max-w-none'>
               <a
                 href='#market'
+                onClick={() => trackEvent({ event: 'cta_click', cta_name: 'hero_predict_now' })}
                 className='btn-3d shrink-0 w-full text-center rounded-2xl bg-lime px-8 py-4.5 text-lg font-black text-lime-ink sm:px-10 sm:text-xl dark:text-[#10230a]!'
               >
-                Predict now →
-              </a>
-              <a
-                href='#market'
-                className='link-action text-sm font-bold text-dark dark:text-lime'
-              >
-                Join the waitlist — takes 10 seconds
+                Make Today&apos;s Prediction →
               </a>
               <div className='text-center text-[11px] font-medium text-muted'>
                 By continuing, you agree to our{' '}
                 <button
                   type='button'
-                  onClick={() => setRulesOpen(true)}
+                  onClick={() => {
+                    setRulesOpen(true)
+                    trackEvent({ event: 'rules_opened', cta_name: 'hero_rules_link' })
+                  }}
                   className='link-action font-bold text-dark dark:text-lime'
                 >
                   Waitlist &amp; Prediction Rules
@@ -227,7 +238,7 @@ export default function Hero() {
                   />
                   <button
                     type='button'
-                    onClick={handleCopy}
+                    onClick={handleCopyClick}
                     className='btn-lift shrink-0 rounded-lg bg-lime px-4 py-2.5 text-xs font-black text-lime-ink hover:bg-[#cfff3d]'
                   >
                     {copied ? 'Copied!' : 'Copy link'}
@@ -238,6 +249,13 @@ export default function Hero() {
                     href={whatsappHref}
                     target='_blank'
                     rel='noreferrer'
+                    onClick={() =>
+                      trackEvent({
+                        event: 'referral_share_click',
+                        cta_name: 'hero_whatsapp',
+                        share_channel: 'whatsapp',
+                      })
+                    }
                     className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-success bg-success/10 px-3 py-2.5 text-xs font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
                   >
                     <WhatsAppIcon />
@@ -266,10 +284,10 @@ export default function Hero() {
                 </div>
                 <div>
                   <div className='text-sm font-black text-ink'>
-                    Predict and Win, Recieve Rewards , Earn Points.
+                    Predict. Earn Points. Unlock Rewards.
                   </div>
                   <div className='mt-0.5 text-xs font-medium text-muted leading-relaxed'>
-                    Founder Badge, priority access and bonus credits — all before launch date.
+                    Get your Founder Badge, earn points, unlock rewards and get priority access before launch.
                   </div>
                 </div>
               </div>

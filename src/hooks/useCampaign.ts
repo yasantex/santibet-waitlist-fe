@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import {
@@ -11,6 +11,7 @@ import {
 import { useAppSelector } from '../redux/hooks'
 import type {
   ActivityItem,
+  ActivityToasts,
   Campaign,
   CampaignRules,
   CampaignStats,
@@ -84,6 +85,102 @@ export function useCampaignActivity(
     params: { limit },
     queryOptions: { refetchInterval: 20_000 },
   })
+}
+
+const STREAM_REOPEN_MIN_MS = 5_000
+const STREAM_REOPEN_MAX_MS = 60_000
+
+/**
+ * Keeps one live connection to the campaign's activity stream for as long as the caller is
+ * mounted. `activity` frames are prepended into the cached /activity lists the ticker reads;
+ * `toasts` frames are handed to `onToasts`.
+ *
+ * EventSource reconnects by itself (sending Last-Event-ID, so the server catches us up) after a
+ * dropped connection. It gives up for good on a non-200 such as the 503 STREAM_CAPACITY, so in
+ * that case we reopen it ourselves with backoff, resuming from the last `asOf` we saw.
+ */
+export function useCampaignActivityStream(
+  slug: string | null | undefined,
+  onToasts: (toasts: ActivityToasts) => void,
+) {
+  const queryClient = useQueryClient()
+  const onToastsRef = useRef(onToasts)
+
+  useEffect(() => {
+    onToastsRef.current = onToasts
+  }, [onToasts])
+
+  useEffect(() => {
+    if (!slug || typeof EventSource === 'undefined') return
+
+    const activityPath = `${CAMPAIGNS_BASE}/${slug}/activity`
+    const streamUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}${activityPath}/stream`
+    let source: EventSource | null = null
+    let reopenTimer: ReturnType<typeof setTimeout> | undefined
+    let reopenDelay = STREAM_REOPEN_MIN_MS
+    let lastAsOf: string | null = null
+    let closed = false
+
+    const prependActivity = (items: ActivityItem[]) => {
+      if (items.length === 0) return
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: [activityPath] })
+        .forEach(({ queryKey }) => {
+          // Each cached list keeps the length it was asked for.
+          const limit = (queryKey[1] as { limit?: number } | undefined)?.limit
+          queryClient.setQueryData<{ data: ActivityItem[] }>(queryKey, (old) => {
+            if (!old) return old
+            const data = [...items, ...old.data]
+            return { ...old, data: limit ? data.slice(0, limit) : data }
+          })
+        })
+    }
+
+    const open = () => {
+      const url = lastAsOf
+        ? `${streamUrl}?since=${encodeURIComponent(lastAsOf)}`
+        : streamUrl
+      source = new EventSource(url)
+
+      source.addEventListener('hello', (event) => {
+        reopenDelay = STREAM_REOPEN_MIN_MS
+        const { asOf } = JSON.parse((event as MessageEvent).data) as { asOf: string }
+        lastAsOf ??= asOf
+      })
+
+      source.addEventListener('activity', (event) => {
+        const frame = JSON.parse((event as MessageEvent).data) as {
+          asOf: string
+          data: ActivityItem[]
+        }
+        lastAsOf = frame.asOf
+        prependActivity(frame.data)
+      })
+
+      source.addEventListener('toasts', (event) => {
+        const frame = JSON.parse((event as MessageEvent).data) as ActivityToasts
+        lastAsOf = frame.asOf
+        onToastsRef.current(frame)
+      })
+
+      source.onerror = () => {
+        // CONNECTING means the browser is already retrying; only step in once it has given up.
+        if (closed || source?.readyState !== EventSource.CLOSED) return
+        source.close()
+        reopenTimer = setTimeout(open, reopenDelay)
+        reopenDelay = Math.min(reopenDelay * 2, STREAM_REOPEN_MAX_MS)
+      }
+    }
+
+    open()
+
+    return () => {
+      closed = true
+      clearTimeout(reopenTimer)
+      source?.close()
+    }
+  }, [slug, queryClient])
 }
 
 export function useTodayQuestion(slug: string | null | undefined) {
