@@ -16,7 +16,7 @@ export default function SectionHead({
         </span>
         <span className='h-0.5 w-6 rounded-full bg-lime sm:w-8' />
       </div>
-      <h2 className='md:text-[44px] text-center text-[32px] leading-8 md:leading-11.5 font-black italic max-w-150 text-ink'>
+      <h2 className='md:text-[44px] text-center text-[32px] leading-8 md:leading-11.5 font-black italic max-w-180 text-ink'>
         {title}
       </h2>
       {subtitle && (

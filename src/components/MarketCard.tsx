@@ -17,6 +17,7 @@ import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import { setStanding } from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
+import { errorInfo, trackEvent } from '../utils/analytics'
 import WaitlistRulesModal from './WaitlistRulesModal'
 
 type Stage = 'pick' | 'phone' | 'code' | 'done'
@@ -95,6 +96,7 @@ export default function MarketCard() {
     data: todayQuestion,
     isLoading: questionLoading,
     isError: todayQuestionError,
+    error: todayQuestionErrorDetail,
   } = useTodayQuestion(slug)
   const { data: meData } = useMe(slug)
   const standing = meData ?? cachedStanding
@@ -145,8 +147,27 @@ export default function MarketCard() {
     if (stage === 'code') codeBoxRefs.current[0]?.focus()
   }, [stage])
 
+  useEffect(() => {
+    if (todayQuestionError) {
+      trackEvent({ event: 'page_load_error', ...errorInfo(todayQuestionErrorDetail) })
+    }
+  }, [todayQuestionError, todayQuestionErrorDetail])
+
   const showPhoneStep = !knownReturningPlayer || changingPhone
   const isValidPhone = NG_PHONE_REGEX.test(phone)
+  const showPhoneError = phone.length === 10 && !isValidPhone
+
+  // Fires each time the "Enter a valid Nigerian mobile number" message appears.
+  useEffect(() => {
+    if (showPhoneError) {
+      trackEvent({
+        event: 'form_validation_error',
+        form_name: 'waitlist',
+        form_step: 'phone',
+        error_type: 'invalid_phone',
+      })
+    }
+  }, [showPhoneError])
   const canSubmit = showPhoneStep ? isValidPhone : true
 
   const yesPercent = stats?.today?.yesPercent
@@ -171,6 +192,13 @@ export default function MarketCard() {
     setPickedSide(side)
     setErrorMsg(null)
     setStage('phone')
+    trackEvent({
+      event: 'waitlist_form_start',
+      form_name: 'waitlist',
+      form_step: 'pick',
+      side,
+      returning_player: knownReturningPlayer,
+    })
   }
 
   function handlePhoneChange(raw: string) {
@@ -184,6 +212,12 @@ export default function MarketCard() {
   async function handleSubmit() {
     if (!pickedSide || !slug) return
     setErrorMsg(null)
+    trackEvent({
+      event: 'waitlist_form_submit',
+      form_name: 'waitlist',
+      form_step: 'phone',
+      returning_player: knownReturningPlayer,
+    })
     try {
       const result = await predictMutation.mutateAsync({
         choice: pickedSide.toUpperCase() as 'YES' | 'NO',
@@ -194,13 +228,24 @@ export default function MarketCard() {
         setDestination(result.destination ?? '')
         setStage('code')
         setResendCooldown(60)
+        trackEvent({
+          event: 'verification_started',
+          form_name: 'waitlist',
+          verification_method: 'phone',
+        })
       } else {
         setStage('done')
+        trackEvent({ event: 'prediction_confirmed', side: pickedSide })
       }
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(err, 'Something went wrong. Please try again.'),
       )
+      const info = errorInfo(err)
+      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'phone', request: 'predict', ...info })
+      if (!knownReturningPlayer) {
+        trackEvent({ event: 'waitlist_signup_failed', form_name: 'waitlist', form_step: 'phone', ...info })
+      }
     }
   }
 
@@ -214,10 +259,30 @@ export default function MarketCard() {
       })
       dispatch(setStanding(result))
       setStage('done')
+      trackEvent({
+        event: 'verification_completed',
+        form_name: 'waitlist',
+        verification_method: verificationMethod,
+      })
+      // Backend has confirmed the player. A returning player re-verifying a
+      // changed number isn't a new signup.
+      trackEvent(
+        knownReturningPlayer
+          ? { event: 'prediction_confirmed', side: pickedSide ?? undefined }
+          : {
+              event: 'waitlist_signup_success',
+              form_name: 'waitlist',
+              side: pickedSide ?? undefined,
+              referred: Boolean(referralCode),
+            },
+      )
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(err, 'That code is invalid or has expired.'),
       )
+      const info = errorInfo(err)
+      trackEvent({ event: 'verification_failed', form_name: 'waitlist', verification_method: verificationMethod, ...info })
+      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'confirm_code', ...info })
     }
   }
 
@@ -229,6 +294,7 @@ export default function MarketCard() {
       setDestination(result.destination)
       setResendCooldown(60)
       setResendCount((n) => n + 1)
+      trackEvent({ event: 'verification_code_resent', verification_method: 'phone' })
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(
@@ -236,6 +302,7 @@ export default function MarketCard() {
           'Could not resend the code — try again shortly.',
         ),
       )
+      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'resend_code', ...errorInfo(err) })
     }
   }
 
@@ -250,6 +317,11 @@ export default function MarketCard() {
       setDestination(result.destination)
       setResendCooldown(60)
       setEmailSent(true)
+      trackEvent({
+        event: 'verification_started',
+        form_name: 'waitlist',
+        verification_method: 'email',
+      })
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(
@@ -257,6 +329,7 @@ export default function MarketCard() {
           'Could not send the code to that email — try again.',
         ),
       )
+      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'email_code', ...errorInfo(err) })
     }
   }
 
@@ -316,14 +389,17 @@ export default function MarketCard() {
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
+    trackEvent({ event: 'referral_link_copied', cta_name: 'market_copy_link' })
   }
 
   const submitting = predictMutation.isPending || confirmMutation.isPending
+  // Which channel delivered the code the player is about to confirm.
+  const verificationMethod = emailSent ? 'email' : 'phone'
 
   const loading = campaignLoading || (Boolean(slug) && questionLoading)
 
   return (
-    <div className='mx-auto max-w-140'>
+    <div className='mx-auto max-w-180'>
       {/* Slip masthead */}
       <div className='flex items-center justify-between rounded-t-2xl bg-dark px-6 py-3 dark:bg-lime'>
         <span className='text-base font-bold uppercase tracking-[0.05em] text-white dark:text-lime-ink'>
@@ -469,13 +545,13 @@ export default function MarketCard() {
                           value={formatPhoneDisplay(phone)}
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           className={`min-w-0 flex-1 rounded-xl border-[1.5px] bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal ${
-                            phone.length === 10 && !isValidPhone
+                            showPhoneError
                               ? 'border-error'
                               : 'border-border'
                           }`}
                         />
                       </div>
-                      {phone.length === 10 && !isValidPhone && (
+                      {showPhoneError && (
                         <div className='mb-2 text-[11px] font-bold text-error'>
                           Enter a valid Nigerian mobile number.
                         </div>
@@ -514,7 +590,10 @@ export default function MarketCard() {
                     By continuing, you agree to our{' '}
                     <button
                       type='button'
-                      onClick={() => setRulesOpen(true)}
+                      onClick={() => {
+                        setRulesOpen(true)
+                        trackEvent({ event: 'rules_opened', cta_name: 'market_rules_link' })
+                      }}
                       className='link-action font-bold text-dark dark:text-lime'
                     >
                       Waitlist &amp; Prediction Rules
@@ -746,6 +825,13 @@ export default function MarketCard() {
                       href={whatsappHref}
                       target='_blank'
                       rel='noreferrer'
+                      onClick={() =>
+                        trackEvent({
+                          event: 'referral_share_click',
+                          cta_name: 'market_whatsapp',
+                          share_channel: 'whatsapp',
+                        })
+                      }
                       className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
                     >
                       <WhatsAppIcon />

@@ -37,9 +37,9 @@ export default function ReferFriend() {
           kicker='Refer A Friend'
           title={
             <>
-             Bring friends
+              Invite friends.
               <br />
-             Move up faster.
+              Earn more Founder Points.
             </>
           }
           subtitle='Every friend who joins and makes a prediction earns you both +5 Founder Points — and helps you climb the leaderboard.'

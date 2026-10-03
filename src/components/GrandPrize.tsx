@@ -35,14 +35,14 @@ export default function GrandPrize() {
           kicker='Grand prize draw'
           title={
             <>
-              Get Your Prediction right.
+              Get it right.
               <br />
-              Get Into the Launch-Day Prize Draw.
+              Earn your place in the draw.
             </>
           }
           subtitle={
             totalWinners
-              ? `${totalWinners} winners walk away on launch day — including a ${headline ? formatMoney(headline.amount) : '—'} grand prize winner.`
+              ? `${totalWinners} launch-day winners — including a ${headline ? formatMoney(headline.amount) : '—'} grand prize winner.`
               : 'Multiple winners walk away on launch day — not just one.'
           }
         />
@@ -117,9 +117,9 @@ export default function GrandPrize() {
               )}
 
               <div className='relative mt-5.5 border-t border-dashed border-white/15 pt-4 text-left text-[15.5px] leading-relaxed text-white/55 dark:border-border dark:text-muted'>
-                Each correct prediction qualifies for the launch-day prize draw.
-                21 winners will be selected from eligible correct predictions.
-                Terms and conditions apply.
+                Every eligible correct prediction gives you an entry into the
+                launch-day prize draw. {totalWinners ?? 21} winners will be selected
+                from eligible entries. Terms and conditions apply.
               </div>
             </>
           )}

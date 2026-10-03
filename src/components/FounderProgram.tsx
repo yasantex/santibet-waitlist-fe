@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { founderBenefits } from '../utils/data'
 import SectionHead from './SectionHead'
 import LevelInfoModal from './LevelInfoModal'
+import { trackEvent } from '../utils/analytics'
 import { Icon, type IconName } from './icons'
 import { useActiveCampaign, useCampaignRules, useMe } from '../hooks/useCampaign'
 import { useAppSelector } from '../redux/hooks'
@@ -36,23 +37,26 @@ export default function FounderProgram() {
           kicker='Founder Tiers'
           title={
             <>
-              Rookie today.
+              Start as a Rookie.
               <br />
-              Legendary by launch.
+              Climb your way up.
             </>
           }
           subtitle='Every correct prediction is a step up the ladder — and every tier unlocks more.'
         />
         {levels && levels.length > 0 && (
-          <div className='relative mx-auto max-w-190'>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-2.5 lg:grid-cols-3'>
+          <div className='relative mx-auto max-w-250'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-2.5 lg:grid-cols-5'>
               {levels.map((level, i) => {
                 const isTop = i === levels.length - 1
                 return (
                   <button
                     type='button'
                     key={level.key}
-                    onClick={() => setSelectedLevel(level.key)}
+                    onClick={() => {
+                      setSelectedLevel(level.key)
+                      trackEvent({ event: 'founder_tier_opened', tier: level.key })
+                    }}
                     aria-label={`What is the ${level.name} tier?`}
                     className='btn-lift flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface py-4.5 text-center hover:border-dark dark:hover:border-lime'
                   >
@@ -91,24 +95,7 @@ export default function FounderProgram() {
             />
           </div>
         )}
-        {standing && (
-          <div className='mx-auto mt-7 max-w-160'>
-            <div className='mb-2 text-center text-xs font-bold tracking-[0.08em] text-muted uppercase'>
-              Your current Rank
-            </div>
-            <div className='grid grid-cols-[36px_1fr_auto] items-center gap-3.5 rounded-xl border-[1.5px] border-dark bg-surface px-5.5 py-3.5 text-[14.5px] dark:border-lime'>
-              <span className='flex h-7 w-7 items-center justify-center rounded-full bg-lime text-sm font-bold text-lime-ink'>
-                {standing.rank != null
-                  ? String(standing.rank).padStart(2, '0')
-                  : '—'}
-              </span>
-              <span className='text-ink font-bold'>
-                Founder #{standing.participantNumber.toLocaleString()} (You)
-              </span>
-              <span className='text-dark font-bold'>{standing.points} pts</span>
-            </div>
-          </div>
-        )}
+
 
         <div className='mx-auto mt-11 max-w-190'>
           <div className='mb-4 text-center text-xs font-bold tracking-[0.08em] text-muted uppercase'>
@@ -133,7 +120,7 @@ export default function FounderProgram() {
         </div>
 
         <div className='mx-auto mt-9 max-w-140 border-t border-dashed border-border pt-5 text-center  text-[16.5px] text-success'>
-          These rewards will never be available to users who join after launch.
+          Founder perks are reserved for users who join before launch.
         </div>
       </div>
     </section>

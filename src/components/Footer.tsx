@@ -1,36 +1,41 @@
+'use client'
+
 import Image from 'next/image'
+import { trackEvent } from '../utils/analytics'
+import { SUPPORT_EMAIL } from '../utils/contact'
 
 export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
     <>
-      <section className='pt-18 pb-14 text-center'>
+      {/* <section className='pt-18 pb-14 text-center'>
         <div className='mx-auto max-w-270 px-6'>
           <div className='mb-3 text-xs font-black tracking-[0.1em] text-dark uppercase dark:text-lime'>
-            Don&apos;t just wait
+            Don&apos;t just wait for launch.
           </div>
           <h2 className='mx-auto max-w-160 font-display italic text-[clamp(28px,4.5vw,44px)] font-black tracking-[-0.01em] text-ink'>
             Make today&apos;s prediction.
           </h2>
           <p className='mx-auto mt-4 max-w-125 text-[16.5px] text-muted font-medium'>
-            Every correct prediction before launch gets you closer to Founder
-            status and puts you in the running for the ₦1,000,000 grand prize.
+            Every correct prediction earns Founder Points and can qualify you
+            for the launch-day prize draw.
           </p>
           <div className='mt-8 flex flex-wrap justify-center gap-2.5'>
             <a
               href='#market'
+              onClick={() => trackEvent({ event: 'cta_click', cta_name: 'footer_predict_now' })}
               className='btn-3d inline-block rounded-2xl bg-lime px-8 py-4 font-black text-lime-ink no-underline dark:text-[#10230a]!'
             >
-              Predict Now →
+              Make Today&apos;s Prediction →
             </a>
           </div>
           <div className='mt-4 text-[11px] font-bold tracking-[0.06em] text-muted uppercase'>
-            No Registration &nbsp;·&nbsp; No Deposit &nbsp;·&nbsp; No Payment
-            Required
+            No registration &nbsp;·&nbsp; No deposit &nbsp;·&nbsp; No payment
+            required
           </div>
         </div>
-      </section>
+      </section> */}
 
       <footer className='border-t border-border px-6 py-8 text-center flex flex-col items-center justify-center text-base gap-2.5 text-neutral-10'>
         <Image
@@ -41,6 +46,13 @@ export default function Footer() {
           className='h-11 shrink-0 dark:invert'
           priority
         />
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          onClick={() => trackEvent({ event: 'contact_us_click', cta_name: 'footer_email' })}
+          className='link-action text-sm font-bold text-dark dark:text-lime'
+        >
+          {SUPPORT_EMAIL}
+        </a>
         <div>©️ {year} Awa Lawa Limited · SantiBet is not yet live</div>
       </footer>
     </>

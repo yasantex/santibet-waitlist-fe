@@ -113,6 +113,19 @@ export type ActivityItem =
       amount: Money
     }
 
+/** Grouped counts the activity stream sends in `toasts` frames. Phones arrive already masked. */
+export interface ActivityToasts {
+  asOf: string
+  joined: { count: number; latest: string | null }
+  climbed: { count: number; latest: string | null; rank: number | null }
+  won: {
+    count: number
+    latest: string | null
+    prizeName: string | null
+    amount: Money | null
+  }
+}
+
 export interface TodayQuestion {
   campaignDay: number
   text: string

@@ -44,16 +44,16 @@ export default function ProofSection() {
           kicker='Right now'
           title={
             <>
-              Nobody&apos;s waiting
+              The community is
               <br />
-              for launch day.
+              already predicting.
             </>
           }
-          subtitle='Real people, real predictions, real payouts — happening on the app every single day.'
+          subtitle='Real people. Real predictions. Real competition — earning points and competing for pre-launch rewards every day.'
         />
 
           {/* Live activity panel */}
-          <div className='overflow-hidden rounded-xl max-w-110 mx-auto border border-border bg-surface'>
+          <div className='overflow-hidden rounded-xl max-w-180 mx-auto border border-border bg-surface'>
             <div className='flex items-center gap-2 border-b border-border px-5.5 py-3.5'>
               <span className='h-1.75 w-1.75 rounded-full bg-success' />
               <span className='text-sm font-bold text-ink'>
@@ -81,13 +81,13 @@ export default function ProofSection() {
 
           {/* Previous question, resolved */}
           {previousLoading ? (
-            <div className='mx-auto mt-4 max-w-110 rounded-2xl bg-dark px-5.5 py-5 text-center text-white/70 dark:border dark:border-border dark:bg-surface-2 dark:text-muted'>
+            <div className='mx-auto mt-4 max-w-180 rounded-2xl bg-dark px-5.5 py-5 text-center text-white/70 dark:border dark:border-border dark:bg-surface-2 dark:text-muted'>
               Loading previous result…
             </div>
           ) : (
             hasPrevious &&
             previous && (
-              <div className='mx-auto mt-4 max-w-110 overflow-hidden rounded-2xl bg-dark px-5.5 py-5 text-white dark:border dark:border-border dark:bg-surface-2 dark:text-ink'>
+              <div className='mx-auto mt-4 max-w-180 overflow-hidden rounded-2xl bg-dark px-5.5 py-5 text-white dark:border dark:border-border dark:bg-surface-2 dark:text-ink'>
                 <div className='mb-2 flex items-start justify-between gap-3'>
                   <span className='text-[10px] font-bold uppercase tracking-[0.06em] text-white/55 dark:text-muted'>
                     Day {previous.campaignDay}
@@ -120,13 +120,17 @@ export default function ProofSection() {
                   </div>
                   <div>
                     <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
-                      Paid Out
+                      {previous.payout ? 'Paid Out' : 'Reward'}
                     </div>
-                    <div className='text-lg font-black text-lime'>
-                      {previous.payout != null
-                        ? previous.payout.paid.toLocaleString()
-                        : '—'}
-                    </div>
+                    {previous.payout ? (
+                      <div className='text-lg font-black text-lime'>
+                        {previous.payout.paid.toLocaleString()}
+                      </div>
+                    ) : (
+                      <div className='text-sm font-black leading-snug text-lime'>
+                        Founder points + draw entry
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
