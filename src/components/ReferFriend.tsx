@@ -19,7 +19,9 @@ function milestoneReward(m: ReferralMilestone) {
   }
   if (m.bonusPoints) parts.push(`${m.bonusPoints} bonus points`)
   if (m.bonusDrawEntries)
-    parts.push(`${m.bonusDrawEntries} extra draw entries`)
+    parts.push(
+      `${m.bonusDrawEntries} extra draw ${m.bonusDrawEntries === 1 ? 'entry' : 'entries'}`,
+    )
   return parts.join(' + ') || 'Bonus rewards'
 }
 

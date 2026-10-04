@@ -333,8 +333,26 @@ export default function MarketCard() {
     }
   }
 
+  /** Writes several digits into the boxes from `start` (a full code always starts at the first box). */
+  function fillCode(start: number, digits: string) {
+    const from = digits.length >= CODE_LENGTH ? 0 : start
+    const next = (
+      code.slice(0, from) +
+      digits +
+      code.slice(from + digits.length)
+    ).slice(0, CODE_LENGTH)
+    setCode(next)
+    codeBoxRefs.current[Math.min(next.length, CODE_LENGTH - 1)]?.focus()
+  }
+
   function handleCodeBoxChange(index: number, raw: string) {
-    const char = raw.replace(/\D/g, '').slice(-1)
+    const digits = raw.replace(/\D/g, '')
+    // SMS autofill and keyboard clipboard suggestions arrive here as the whole code, not as a paste.
+    if (digits.length > 2) {
+      fillCode(index, digits)
+      return
+    }
+    const char = digits.slice(-1)
     const next = (code.slice(0, index) + char + code.slice(index + 1)).slice(
       0,
       CODE_LENGTH,
@@ -355,15 +373,17 @@ export default function MarketCard() {
     }
   }
 
-  function handleCodePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+  function handleCodePaste(
+    index: number,
+    e: React.ClipboardEvent<HTMLInputElement>,
+  ) {
     const pasted = e.clipboardData
       .getData('text')
       .replace(/\D/g, '')
       .slice(0, CODE_LENGTH)
     if (!pasted) return
     e.preventDefault()
-    setCode(pasted)
-    codeBoxRefs.current[Math.min(pasted.length, CODE_LENGTH - 1)]?.focus()
+    fillCode(index, pasted)
   }
 
   const referLink =
@@ -639,12 +659,13 @@ export default function MarketCard() {
                         }}
                         type='text'
                         inputMode='numeric'
-                        maxLength={1}
+                        // Only the first box offers the SMS code, or the OS suggests it six times.
+                        autoComplete={i === 0 ? 'one-time-code' : 'off'}
                         aria-label={`Digit ${i + 1} of verification code`}
                         value={code[i] ?? ''}
                         onChange={(e) => handleCodeBoxChange(i, e.target.value)}
                         onKeyDown={(e) => handleCodeBoxKeyDown(i, e)}
-                        onPaste={handleCodePaste}
+                        onPaste={(e) => handleCodePaste(i, e)}
                         onFocus={(e) => e.target.select()}
                         className={`h-13 w-full flex-1 rounded-[10px] border-[1.5px] bg-surface text-center text-xl font-black text-ink transition-colors ${
                           code[i] ? 'border-lime' : 'border-border'
