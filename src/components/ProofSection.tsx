@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import SectionHead from './SectionHead'
 import {
   activityKey,
@@ -10,17 +11,38 @@ import {
 import { formatMoney } from '../utils/money'
 import type { ActivityItem } from '../types/campaign'
 
+function timeAgo(iso: string, now: number) {
+  const secs = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000))
+  if (Number.isNaN(secs)) return ''
+  if (secs < 60) return 'just now'
+  const mins = Math.floor(secs / 60)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
 function activityHtml(item: ActivityItem) {
   switch (item.type) {
     case 'JOINED':
-      return `<strong>${item.player}</strong> just joined`
+      return `<strong>${item.player}</strong> joined`
     case 'PREDICTED':
-      return `<strong>${item.player}</strong> predicted on Day ${item.campaignDay}`
+      return `<strong>${item.player}</strong> predicted`
     case 'CLIMBED':
       return `<strong>${item.player}</strong> moved up to Rank #${item.rank}`
     case 'WON':
-      return `<strong>${item.player}</strong> just won ${formatMoney(item.amount)} — ${item.prizeName}`
+      return `<strong>${item.player}</strong> won ${formatMoney(item.amount)} — ${item.prizeName}`
   }
+}
+
+/** Re-renders every 30s so relative timestamps stay fresh between feed updates. */
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs)
+    return () => clearInterval(id)
+  }, [intervalMs])
+  return now
 }
 
 export default function ProofSection() {
@@ -35,6 +57,7 @@ export default function ProofSection() {
     isError: previousError,
   } = usePreviousQuestion(activeCampaign?.slug)
 
+  const now = useNow()
   const feedItems = activity?.data ?? []
   const hasPrevious = Boolean(previous) && !previousError
 
@@ -58,7 +81,7 @@ export default function ProofSection() {
             <div className='flex items-center gap-2 border-b border-border px-5.5 py-3.5'>
               <span className='h-1.75 w-1.75 rounded-full bg-success' />
               <span className='text-sm font-bold text-ink'>
-                On the ground right now
+                Live Activity
               </span>
             </div>
             {activityLoading ? (
@@ -73,9 +96,16 @@ export default function ProofSection() {
               feedItems.map((item) => (
                 <div
                   key={activityKey(item)}
-                  className='animate-feed-in flex items-center justify-between gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0 [&_strong]:text-ink'
-                  dangerouslySetInnerHTML={{ __html: activityHtml(item) }}
-                />
+                  className='animate-feed-in flex items-center justify-between gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0'
+                >
+                  <span
+                    className='min-w-0 [&_strong]:text-ink'
+                    dangerouslySetInnerHTML={{ __html: activityHtml(item) }}
+                  />
+                  <span className='shrink-0 text-xs text-muted'>
+                    {timeAgo(item.at, now)}
+                  </span>
+                </div>
               ))
             )}
           </div>
@@ -135,7 +165,7 @@ export default function ProofSection() {
                   </div>
                   <div>
                     <div className='mb-0.5 text-[9.5px] font-bold uppercase tracking-[0.05em] text-white/50 dark:text-muted'>
-                      Total Calls
+                      Total Predictions
                     </div>
                     <div className='text-lg font-black text-lime'>
                       {previous.predictions.toLocaleString()}
