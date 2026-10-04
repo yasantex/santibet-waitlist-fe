@@ -2,6 +2,7 @@
 
 import SectionHead from './SectionHead'
 import {
+  activityKey,
   useActiveCampaign,
   useCampaignActivity,
   usePreviousQuestion,
@@ -69,9 +70,9 @@ export default function ProofSection() {
                 Nothing yet — be the first to make a move.
               </div>
             ) : (
-              feedItems.map((item, i) => (
+              feedItems.map((item) => (
                 <div
-                  key={i}
+                  key={activityKey(item)}
                   className='animate-feed-in flex items-center justify-between gap-3 border-b border-border px-5.5 py-3.5 text-base text-placeholder last:border-b-0 [&_strong]:text-ink'
                   dangerouslySetInnerHTML={{ __html: activityHtml(item) }}
                 />
