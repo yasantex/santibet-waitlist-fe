@@ -188,6 +188,9 @@ export interface PredictionResult {
   campaignDay: number
   choice: 'YES' | 'NO'
   destination?: string
+  /** Only with COMPLETE. False when the call was placed with the phone number
+   *  alone (no device token), so the owner can still replace it today. */
+  proven?: boolean
 }
 
 export interface Winning {
