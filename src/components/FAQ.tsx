@@ -53,7 +53,7 @@ export default function FAQ() {
       a: 'Share your unique referral link. When a referred friend joins and makes their first prediction, both of you can earn Founder Points and unlock additional referral rewards.',
     },
   ]
-  const [openId, setOpenId] = useState<string | null>(faqs[0].id)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   function toggle(id: string) {
     const opening = openId !== id
