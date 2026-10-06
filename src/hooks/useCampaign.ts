@@ -87,6 +87,11 @@ export function useCampaignActivity(
   })
 }
 
+/** Stable identity for an activity row, so stream frames and /activity refetches can be merged. */
+export function activityKey(item: ActivityItem) {
+  return `${item.type}|${item.player}|${item.at}`
+}
+
 const STREAM_REOPEN_MIN_MS = 5_000
 const STREAM_REOPEN_MAX_MS = 60_000
 
@@ -131,7 +136,11 @@ export function useCampaignActivityStream(
           const limit = (queryKey[1] as { limit?: number } | undefined)?.limit
           queryClient.setQueryData<{ data: ActivityItem[] }>(queryKey, (old) => {
             if (!old) return old
-            const data = [...items, ...old.data]
+            // A focus refetch may already hold what a catch-up frame replays.
+            const seen = new Set(old.data.map(activityKey))
+            const fresh = items.filter((item) => !seen.has(activityKey(item)))
+            if (fresh.length === 0) return old
+            const data = [...fresh, ...old.data]
             return { ...old, data: limit ? data.slice(0, limit) : data }
           })
         })

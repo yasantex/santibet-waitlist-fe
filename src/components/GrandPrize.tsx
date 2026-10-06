@@ -58,14 +58,7 @@ export default function GrandPrize() {
           ) : (
             <>
               <div className='relative font-display text-[clamp(38px,6.5vw,58px)] font-black tracking-[-0.01em] text-white dark:text-ink'>
-                {headline
-                  ? formatMoney({
-                      ...headline.amount,
-                      amount: String(
-                        Number(headline.amount.amount) + 500000 * 100,
-                      ),
-                    })
-                  : '—'}
+                {headline ? formatMoney(headline.amount) : '—'}
               </div>
               <div className='relative mt-2 text-xs font-bold tracking-[0.08em] text-lime uppercase'>
                 {headline
