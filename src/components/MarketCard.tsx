@@ -27,8 +27,7 @@ const STAGE_ORDER: Stage[] = ['pick', 'phone', 'code', 'done']
 // Nigerian mobile numbers: 10 digits after the leading 0, starting 7/8/9.
 const NG_PHONE_REGEX = /^[789]\d{9}$/
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-// After this many SMS resends, offer to send the code by email instead.
-const EMAIL_FALLBACK_AFTER_RESENDS = 1
+const RESEND_COOLDOWN_SECONDS = 30
 
 function formatPhoneDisplay(digits: string) {
   return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)]
@@ -118,7 +117,6 @@ export default function MarketCard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
-  const [resendCount, setResendCount] = useState(0)
   const [emailFallbackOpen, setEmailFallbackOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -228,7 +226,7 @@ export default function MarketCard() {
       if (result.status === 'AWAITING_CODE') {
         setDestination(result.destination ?? '')
         setStage('code')
-        setResendCooldown(60)
+        setResendCooldown(RESEND_COOLDOWN_SECONDS)
         trackEvent({
           event: 'verification_started',
           form_name: 'waitlist',
@@ -240,10 +238,29 @@ export default function MarketCard() {
         trackEvent({ event: 'prediction_confirmed', side: pickedSide })
       }
     } catch (err) {
+      const info = errorInfo(err)
+      // A code was already sent for this pick — take them back to the code entry
+      // instead of dead-ending; resend is available straight away.
+      if (info.error_code === 'PREDICTION_AWAITING_CODE') {
+        const data = (
+          err as { response?: { data?: { destination?: string } } }
+        ).response?.data
+        setDestination(
+          data?.destination ?? `+234 ${formatPhoneDisplay(phone.trim())}`,
+        )
+        setCode('')
+        setResendCooldown(0)
+        setStage('code')
+        trackEvent({
+          event: 'verification_started',
+          form_name: 'waitlist',
+          verification_method: 'phone',
+        })
+        return
+      }
       setErrorMsg(
         getApiErrorMessage(err, 'Something went wrong. Please try again.'),
       )
-      const info = errorInfo(err)
       trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'phone', request: 'predict', ...info })
       if (!knownReturningPlayer) {
         trackEvent({ event: 'waitlist_signup_failed', form_name: 'waitlist', form_step: 'phone', ...info })
@@ -295,8 +312,7 @@ export default function MarketCard() {
     try {
       const result = await resendMutation.mutateAsync({ phone: phone.trim() })
       setDestination(result.destination)
-      setResendCooldown(60)
-      setResendCount((n) => n + 1)
+      setResendCooldown(RESEND_COOLDOWN_SECONDS)
       trackEvent({ event: 'verification_code_resent', verification_method: 'phone' })
     } catch (err) {
       setErrorMsg(
@@ -318,7 +334,7 @@ export default function MarketCard() {
         email: email.trim(),
       })
       setDestination(result.destination)
-      setResendCooldown(60)
+      setResendCooldown(RESEND_COOLDOWN_SECONDS)
       setEmailSent(true)
       trackEvent({
         event: 'verification_started',
@@ -629,7 +645,6 @@ export default function MarketCard() {
                     onClick={() => {
                       setStage('pick')
                       setChangingPhone(false)
-                      setResendCount(0)
                       setEmailFallbackOpen(false)
                       setEmail('')
                       setEmailSent(false)
@@ -694,8 +709,7 @@ export default function MarketCard() {
                         : "Didn't get it? Resend code"}
                   </button>
 
-                  {resendCount >= EMAIL_FALLBACK_AFTER_RESENDS &&
-                    !emailSent && (
+                  {!emailSent && (
                       <div className='mb-4 -mt-2'>
                         {!emailFallbackOpen ? (
                           <button
@@ -772,7 +786,6 @@ export default function MarketCard() {
                     type='button'
                     onClick={() => {
                       setStage('phone')
-                      setResendCount(0)
                       setEmailFallbackOpen(false)
                       setEmail('')
                       setEmailSent(false)
