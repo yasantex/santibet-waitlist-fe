@@ -78,6 +78,7 @@ export default function Hero() {
     0
   ).toLocaleString()
   const yesPercent = stats?.today?.yesPercent
+  const noPercent = yesPercent != null ? 100 - yesPercent : null
 
   const referLink =
     standing && typeof window !== 'undefined'
@@ -158,20 +159,26 @@ export default function Hero() {
               <div className='mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted'>
                 Today&apos;s Prediction
               </div>
-              <div className='grid grid-cols-3 gap-3 divide-x divide-border'>
+              <div className='grid grid-cols-[repeat(4,auto)] justify-between gap-2 divide-x divide-border sm:grid-cols-4 sm:gap-3'>
                 <div>
                   <div className='text-lg font-black text-ink sm:text-xl'>{prizePoolLabel}</div>
                   <div className='text-xs font-semibold text-muted'>Prize Pool</div>
                 </div>
-                <div className='pl-3'>
+                <div className='pl-2 sm:pl-3'>
                   <div className='text-lg font-black text-ink sm:text-xl'>{predictedLabel}</div>
                   <div className='text-xs font-semibold text-muted'>Predictions</div>
                 </div>
-                <div className='pl-3'>
+                <div className='pl-2 sm:pl-3'>
                   <div className='text-lg font-black text-success sm:text-xl'>
                     {yesPercent != null ? `${yesPercent}%` : '—'}
                   </div>
                   <div className='text-xs font-semibold text-muted'>YES</div>
+                </div>
+                <div className='pl-2 sm:pl-3'>
+                  <div className='text-lg font-black text-error sm:text-xl'>
+                    {noPercent != null ? `${noPercent}%` : '—'}
+                  </div>
+                  <div className='text-xs font-semibold text-muted'>NO</div>
                 </div>
               </div>
             </div>
