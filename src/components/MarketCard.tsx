@@ -15,7 +15,12 @@ import {
 } from '../hooks/useCampaign'
 import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
-import { setStanding } from '../redux/campaignSlice'
+import {
+  numberProven,
+  numberVerified,
+  setStanding,
+  switchNumber,
+} from '../redux/campaignSlice'
 import { formatMoney } from '../utils/money'
 import { errorInfo, trackEvent } from '../utils/analytics'
 import WaitlistRulesModal from './WaitlistRulesModal'
@@ -33,6 +38,11 @@ function formatPhoneDisplay(digits: string) {
   return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)]
     .filter(Boolean)
     .join(' ')
+}
+
+/** 8012341234 → 080••••1234 */
+function maskPhone(digits: string) {
+  return `0${digits.slice(0, 2)}••••${digits.slice(-4)}`
 }
 
 function CheckIcon() {
@@ -87,6 +97,8 @@ function StepProgress({ stage }: { stage: Stage }) {
 export default function MarketCard() {
   const dispatch = useAppDispatch()
   const cachedStanding = useAppSelector((s) => s.campaign.standing)
+  const savedNumbers = useAppSelector((s) => s.campaign.numbers)
+  const currentPhone = useAppSelector((s) => s.campaign.currentPhone)
 
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
@@ -110,6 +122,7 @@ export default function MarketCard() {
 
   const [pickedSide, setPickedSide] = useState<PredictionSide | null>(null)
   const [changingPhone, setChangingPhone] = useState(false)
+  const [switcherOpen, setSwitcherOpen] = useState(false)
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [stage, setStage] = useState<Stage>('pick')
@@ -122,6 +135,9 @@ export default function MarketCard() {
   const [emailSent, setEmailSent] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [placedUnproven, setPlacedUnproven] = useState(false)
+  /** The number the last prediction went in for, so an unproven one can be verified here. */
+  const [placedPhone, setPlacedPhone] = useState<string | null>(null)
+  const [sendingFirstCode, setSendingFirstCode] = useState(false)
   const [referralCode] = useState<string | undefined>(() =>
     typeof window === 'undefined'
       ? undefined
@@ -148,11 +164,18 @@ export default function MarketCard() {
 
   useEffect(() => {
     if (todayQuestionError) {
-      trackEvent({ event: 'page_load_error', ...errorInfo(todayQuestionErrorDetail) })
+      trackEvent({
+        event: 'page_load_error',
+        ...errorInfo(todayQuestionErrorDetail),
+      })
     }
   }, [todayQuestionError, todayQuestionErrorDetail])
 
   const showPhoneStep = !knownReturningPlayer || changingPhone
+  const otherSavedNumbers = savedNumbers.filter((n) => n.phone !== currentPhone)
+  const predictingAsLabel = currentPhone
+    ? maskPhone(currentPhone)
+    : 'your verified number'
   const isValidPhone = NG_PHONE_REGEX.test(phone)
   const showPhoneError = phone.length === 10 && !isValidPhone
 
@@ -201,10 +224,7 @@ export default function MarketCard() {
   }
 
   function handlePhoneChange(raw: string) {
-    const digits = raw
-      .replace(/\D/g, '')
-      .replace(/^0+/, '')
-      .slice(0, 10)
+    const digits = raw.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10)
     setPhone(digits)
   }
 
@@ -218,9 +238,14 @@ export default function MarketCard() {
       returning_player: knownReturningPlayer,
     })
     try {
+      // Always name the number: the device's keys no longer decide who a call is for.
+      // Only a device verified before numbers were remembered has no current one.
+      const predictPhone = showPhoneStep
+        ? phone.trim()
+        : (currentPhone ?? undefined)
       const result = await predictMutation.mutateAsync({
         choice: pickedSide.toUpperCase() as 'YES' | 'NO',
-        phone: showPhoneStep ? phone.trim() : undefined,
+        phone: predictPhone,
         referralCode,
       })
       if (result.status === 'AWAITING_CODE') {
@@ -234,17 +259,47 @@ export default function MarketCard() {
         })
       } else {
         setPlacedUnproven(result.proven === false)
-        setStage('done')
+        setPlacedPhone(predictPhone ?? null)
+        // Proven means this device holds the number's key, so it's one we can play as.
+        if (predictPhone && result.proven !== false) {
+          dispatch(numberProven(predictPhone))
+        }
         trackEvent({ event: 'prediction_confirmed', side: pickedSide })
+        // A newly entered number this device holds no key for (verified elsewhere before)
+        // still goes straight to the code, so the device can play as it from now on.
+        // Only a saved number skips it; if the send fails, the done step offers it again.
+        if (showPhoneStep && predictPhone && result.proven === false) {
+          setSendingFirstCode(true)
+          try {
+            const sent = await resendMutation.mutateAsync({
+              phone: predictPhone,
+            })
+            setDestination(sent.destination)
+            setCode('')
+            setResendCooldown(RESEND_COOLDOWN_SECONDS)
+            setStage('code')
+            trackEvent({
+              event: 'verification_started',
+              form_name: 'waitlist',
+              verification_method: 'phone',
+            })
+            return
+          } catch (err) {
+            trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'phone', request: 'send_code', ...errorInfo(err) })
+          } finally {
+            setSendingFirstCode(false)
+          }
+        }
+        setChangingPhone(false)
+        setStage('done')
       }
     } catch (err) {
       const info = errorInfo(err)
       // A code was already sent for this pick — take them back to the code entry
       // instead of dead-ending; resend is available straight away.
       if (info.error_code === 'PREDICTION_AWAITING_CODE') {
-        const data = (
-          err as { response?: { data?: { destination?: string } } }
-        ).response?.data
+        const data = (err as { response?: { data?: { destination?: string } } })
+          .response?.data
         setDestination(
           data?.destination ?? `+234 ${formatPhoneDisplay(phone.trim())}`,
         )
@@ -261,9 +316,20 @@ export default function MarketCard() {
       setErrorMsg(
         getApiErrorMessage(err, 'Something went wrong. Please try again.'),
       )
-      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'phone', request: 'predict', ...info })
+      trackEvent({
+        event: 'api_request_failed',
+        form_name: 'waitlist',
+        form_step: 'phone',
+        request: 'predict',
+        ...info,
+      })
       if (!knownReturningPlayer) {
-        trackEvent({ event: 'waitlist_signup_failed', form_name: 'waitlist', form_step: 'phone', ...info })
+        trackEvent({
+          event: 'waitlist_signup_failed',
+          form_name: 'waitlist',
+          form_step: 'phone',
+          ...info,
+        })
       }
     }
   }
@@ -276,7 +342,8 @@ export default function MarketCard() {
         phone: phone.trim(),
         code: code.trim(),
       })
-      dispatch(setStanding(result))
+      dispatch(numberVerified({ phone: phone.trim(), standing: result }))
+      setChangingPhone(false)
       setPlacedUnproven(false)
       setStage('done')
       trackEvent({
@@ -301,8 +368,19 @@ export default function MarketCard() {
         getApiErrorMessage(err, 'That code is invalid or has expired.'),
       )
       const info = errorInfo(err)
-      trackEvent({ event: 'verification_failed', form_name: 'waitlist', verification_method: verificationMethod, ...info })
-      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'confirm_code', ...info })
+      trackEvent({
+        event: 'verification_failed',
+        form_name: 'waitlist',
+        verification_method: verificationMethod,
+        ...info,
+      })
+      trackEvent({
+        event: 'api_request_failed',
+        form_name: 'waitlist',
+        form_step: 'code',
+        request: 'confirm_code',
+        ...info,
+      })
     }
   }
 
@@ -313,7 +391,10 @@ export default function MarketCard() {
       const result = await resendMutation.mutateAsync({ phone: phone.trim() })
       setDestination(result.destination)
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
-      trackEvent({ event: 'verification_code_resent', verification_method: 'phone' })
+      trackEvent({
+        event: 'verification_code_resent',
+        verification_method: 'phone',
+      })
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(
@@ -321,7 +402,43 @@ export default function MarketCard() {
           'Could not resend the code — try again shortly.',
         ),
       )
-      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'resend_code', ...errorInfo(err) })
+      trackEvent({
+        event: 'api_request_failed',
+        form_name: 'waitlist',
+        form_step: 'code',
+        request: 'resend_code',
+        ...errorInfo(err),
+      })
+    }
+  }
+
+  /** After an unproven call: send a code so this device gets the number's key and standing. */
+  async function handleVerifyPlacedNumber() {
+    if (!placedPhone) return
+    setErrorMsg(null)
+    try {
+      const result = await resendMutation.mutateAsync({ phone: placedPhone })
+      setPhone(placedPhone)
+      setCode('')
+      setDestination(result.destination)
+      setResendCooldown(RESEND_COOLDOWN_SECONDS)
+      setStage('code')
+      trackEvent({
+        event: 'verification_started',
+        form_name: 'waitlist',
+        verification_method: 'phone',
+      })
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Could not send a code — try again shortly.'),
+      )
+      trackEvent({
+        event: 'api_request_failed',
+        form_name: 'waitlist',
+        form_step: 'code',
+        request: 'verify_placed_number',
+        ...errorInfo(err),
+      })
     }
   }
 
@@ -348,7 +465,13 @@ export default function MarketCard() {
           'Could not send the code to that email — try again.',
         ),
       )
-      trackEvent({ event: 'api_request_failed', form_name: 'waitlist', form_step: 'code', request: 'email_code', ...errorInfo(err) })
+      trackEvent({
+        event: 'api_request_failed',
+        form_name: 'waitlist',
+        form_step: 'code',
+        request: 'email_code',
+        ...errorInfo(err),
+      })
     }
   }
 
@@ -405,15 +528,18 @@ export default function MarketCard() {
     fillCode(index, pasted)
   }
 
+  // An unproven call was for a number this device holds no key for, so whatever standing we
+  // have belongs to some other number (or there is none) — don't show it as theirs.
+  const doneStanding = placedUnproven ? null : standing
   const referLink =
-    standing && typeof window !== 'undefined'
-      ? `${window.location.origin}/?ref=${standing.referralCode}`
+    doneStanding && typeof window !== 'undefined'
+      ? `${window.location.origin}/?ref=${doneStanding.referralCode}`
       : ''
-  const founderNumber = standing
-    ? `#${standing.participantNumber.toLocaleString()}`
+  const founderNumber = doneStanding
+    ? `#${doneStanding.participantNumber.toLocaleString()}`
     : ''
   const founderRank =
-    standing?.rank != null ? `#${standing.rank.toLocaleString()}` : '—'
+    doneStanding?.rank != null ? `#${doneStanding.rank.toLocaleString()}` : '—'
   const whatsappHref = referLink
     ? `https://wa.me/?text=${encodeURIComponent(
         `I just made my SantiBet prediction — join me and we both earn Founder points: ${referLink}`,
@@ -431,7 +557,8 @@ export default function MarketCard() {
     trackEvent({ event: 'referral_link_copied', cta_name: 'market_copy_link' })
   }
 
-  const submitting = predictMutation.isPending || confirmMutation.isPending
+  const submitting =
+    predictMutation.isPending || confirmMutation.isPending || sendingFirstCode
   // Which channel delivered the code the player is about to confirm.
   const verificationMethod = emailSent ? 'email' : 'phone'
 
@@ -509,6 +636,14 @@ export default function MarketCard() {
                     </button>
                   </div>
 
+                  {knownReturningPlayer && (
+                    <div className='-mt-2 mb-4 text-xs font-semibold text-muted'>
+                      Predicting as{' '}
+                      <strong className='text-ink'>{predictingAsLabel}</strong>{' '}
+                      — you can switch numbers after you pick.
+                    </div>
+                  )}
+
                   <div className='grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-dashed border-border pt-4.5'>
                     <div className='text-center'>
                       <div className='mb-1 text-[10.5px] font-bold tracking-[0.06em] text-neutral-10 uppercase'>
@@ -551,26 +686,89 @@ export default function MarketCard() {
                     </span>
                   </div>
 
-                  {knownReturningPlayer && (
+                  {knownReturningPlayer && !changingPhone && (
+                    <div className='mb-4 rounded-xl border-[1.5px] border-border px-3.5 py-3'>
+                      <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1'>
+                        <span className='text-[12.5px] font-semibold text-muted'>
+                          Predicting as{' '}
+                          <strong className='text-ink'>
+                            {predictingAsLabel}
+                          </strong>
+                        </span>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setErrorMsg(null)
+                            if (otherSavedNumbers.length > 0) {
+                              setSwitcherOpen((v) => !v)
+                            } else {
+                              setChangingPhone(true)
+                              setPhone('')
+                            }
+                          }}
+                          className='link-action text-xs font-bold text-dark dark:text-lime'
+                        >
+                          {switcherOpen
+                            ? 'Close'
+                            : otherSavedNumbers.length > 0
+                              ? 'Switch number'
+                              : 'Use another number'}
+                        </button>
+                      </div>
+
+                      {switcherOpen && (
+                        <div className='mt-3 flex flex-wrap gap-2 border-t border-dashed border-border pt-3'>
+                          {otherSavedNumbers.map((n) => (
+                            <button
+                              key={n.phone}
+                              type='button'
+                              onClick={() => {
+                                dispatch(switchNumber(n.phone))
+                                setSwitcherOpen(false)
+                                setErrorMsg(null)
+                              }}
+                              className='btn-lift rounded-lg border-[1.5px] border-border bg-surface px-3 py-2 text-xs font-bold text-ink hover:border-dark dark:hover:border-lime'
+                            >
+                              {maskPhone(n.phone)}
+                            </button>
+                          ))}
+                          <button
+                            type='button'
+                            onClick={() => {
+                              setSwitcherOpen(false)
+                              setChangingPhone(true)
+                              setPhone('')
+                              setErrorMsg(null)
+                            }}
+                            className='btn-lift rounded-lg border-[1.5px] border-dashed border-border px-3 py-2 text-xs font-bold text-muted hover:border-dark hover:text-ink dark:hover:border-lime'
+                          >
+                            + Add a number
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {knownReturningPlayer && changingPhone && (
                     <button
                       type='button'
                       onClick={() => {
-                        setChangingPhone((v) => !v)
+                        setChangingPhone(false)
                         setPhone('')
                         setErrorMsg(null)
                       }}
                       className='link-action mb-4 block text-left text-xs font-bold text-dark dark:text-lime'
                     >
-                      {changingPhone
-                        ? 'Use my saved number instead'
-                        : 'Not your number? Change it'}
+                      ← Predict as {predictingAsLabel} instead
                     </button>
                   )}
 
                   {showPhoneStep && (
                     <>
                       <div className='mb-2 text-xs font-bold text-muted'>
-                        Your mobile number
+                        {knownReturningPlayer
+                          ? 'Mobile number to predict as'
+                          : 'Your mobile number'}
                       </div>
                       <div className='mb-1.5 flex gap-2'>
                         <div className='flex items-center rounded-xl border-[1.5px] border-border bg-surface-2 px-3 py-2 text-sm font-bold text-ink'>
@@ -584,9 +782,7 @@ export default function MarketCard() {
                           value={formatPhoneDisplay(phone)}
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           className={`min-w-0 flex-1 rounded-xl border-[1.5px] bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal ${
-                            showPhoneError
-                              ? 'border-error'
-                              : 'border-border'
+                            showPhoneError ? 'border-error' : 'border-border'
                           }`}
                         />
                       </div>
@@ -631,7 +827,10 @@ export default function MarketCard() {
                       type='button'
                       onClick={() => {
                         setRulesOpen(true)
-                        trackEvent({ event: 'rules_opened', cta_name: 'market_rules_link' })
+                        trackEvent({
+                          event: 'rules_opened',
+                          cta_name: 'market_rules_link',
+                        })
                       }}
                       className='link-action font-bold text-dark dark:text-lime'
                     >
@@ -645,6 +844,7 @@ export default function MarketCard() {
                     onClick={() => {
                       setStage('pick')
                       setChangingPhone(false)
+                      setSwitcherOpen(false)
                       setEmailFallbackOpen(false)
                       setEmail('')
                       setEmailSent(false)
@@ -710,52 +910,52 @@ export default function MarketCard() {
                   </button>
 
                   {!emailSent && (
-                      <div className='mb-4 -mt-2'>
-                        {!emailFallbackOpen ? (
-                          <button
-                            type='button'
-                            onClick={() => setEmailFallbackOpen(true)}
-                            className='link-action block text-xs font-bold text-dark dark:text-lime'
-                          >
-                            Still no code? Request it by email
-                          </button>
-                        ) : (
-                          <div className='rounded-xl bg-surface-2 px-3.5 py-3'>
-                            <div className='mb-2 text-xs font-bold text-muted'>
-                              We&apos;ll send the code to this email instead
-                            </div>
-                            <div className='flex flex-wrap gap-2'>
-                              <input
-                                type='email'
-                                placeholder='you@example.com'
-                                aria-label='Email address'
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
-                              />
-                              <button
-                                type='button'
-                                onClick={handleSendEmailCode}
-                                disabled={
-                                  !EMAIL_REGEX.test(email.trim()) ||
-                                  emailVerificationMutation.isPending
-                                }
-                                className={`shrink-0 rounded-xl px-4 py-2 text-sm font-black transition-[filter,transform,background-color] ${
-                                  EMAIL_REGEX.test(email.trim()) &&
-                                  !emailVerificationMutation.isPending
-                                    ? 'btn-lift bg-lime text-lime-ink hover:bg-[#cfff3d]'
-                                    : 'cursor-not-allowed bg-border text-neutral-10'
-                                }`}
-                              >
-                                {emailVerificationMutation.isPending
-                                  ? 'Sending…'
-                                  : 'Send'}
-                              </button>
-                            </div>
+                    <div className='mb-4 -mt-2'>
+                      {!emailFallbackOpen ? (
+                        <button
+                          type='button'
+                          onClick={() => setEmailFallbackOpen(true)}
+                          className='link-action block text-xs font-bold text-dark dark:text-lime'
+                        >
+                          Still no code? Request it by email
+                        </button>
+                      ) : (
+                        <div className='rounded-xl bg-surface-2 px-3.5 py-3'>
+                          <div className='mb-2 text-xs font-bold text-muted'>
+                            We&apos;ll send the code to this email instead
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className='flex flex-wrap gap-2'>
+                            <input
+                              type='email'
+                              placeholder='you@example.com'
+                              aria-label='Email address'
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className='min-w-0 flex-1 rounded-xl border-[1.5px] border-border bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal'
+                            />
+                            <button
+                              type='button'
+                              onClick={handleSendEmailCode}
+                              disabled={
+                                !EMAIL_REGEX.test(email.trim()) ||
+                                emailVerificationMutation.isPending
+                              }
+                              className={`shrink-0 rounded-xl px-4 py-2 text-sm font-black transition-[filter,transform,background-color] ${
+                                EMAIL_REGEX.test(email.trim()) &&
+                                !emailVerificationMutation.isPending
+                                  ? 'btn-lift bg-lime text-lime-ink hover:bg-[#cfff3d]'
+                                  : 'cursor-not-allowed bg-border text-neutral-10'
+                              }`}
+                            >
+                              {emailVerificationMutation.isPending
+                                ? 'Sending…'
+                                : 'Send'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {emailSent && (
                     <div className='mb-4 -mt-2 text-xs font-bold text-success'>
@@ -807,87 +1007,137 @@ export default function MarketCard() {
                     You&apos;re locked in!
                   </div>
                   <div className='mb-4.5 text-[13px] text-muted'>
-                    Your {pickedSide?.toUpperCase()} prediction is saved. Come back
-                    tomorrow for a new one.
+                    Your {pickedSide?.toUpperCase()} prediction is saved. Come
+                    back tomorrow for a new one.
                   </div>
-                  {placedUnproven && (
-                    <div className='mb-4.5 -mt-2 rounded-[10px] border border-border bg-paper px-4 py-3 text-[12.5px] text-muted'>
-                      Placed without your verified device. To change it today,
-                      open the campaign on the device you verified with.
+
+
+                  {!doneStanding && placedPhone && (
+                    <div className='mb-4 rounded-[10px] border-[1.5px] border-dashed border-border px-4 py-3.5'>
+                      <div className='mb-2.5 text-[13px] text-muted'>
+                        Verify {maskPhone(placedPhone)} on this device to see
+                        Founder number, rank and referral link.
+                      </div>
+                      <button
+                        type='button'
+                        onClick={handleVerifyPlacedNumber}
+                        disabled={resendMutation.isPending}
+                        className={`rounded-lg px-4 py-2 text-[12.5px] font-black ${
+                          resendMutation.isPending
+                            ? 'cursor-not-allowed bg-border text-neutral-10'
+                            : 'btn-lift bg-dark text-white hover:bg-dark-2 dark:bg-lime dark:text-lime-ink dark:hover:bg-[#cfff3d]'
+                        }`}
+                      >
+                        {resendMutation.isPending
+                          ? 'Sending…'
+                          : 'Send me a code'}
+                      </button>
+                      {errorMsg && (
+                        <div className='mt-2.5 text-[13px] font-medium text-error'>
+                          {errorMsg}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  <div className='mb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left'>
-                    <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                      <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
-                        Founder Number
+                  {doneStanding && (
+                    <div className='mb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left'>
+                      <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
+                        <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
+                          Founder Number
+                        </div>
+                        <div className='text-[17px] font-bold text-success'>
+                          {founderNumber}
+                        </div>
                       </div>
-                      <div className='text-[17px] font-bold text-success'>
-                        {founderNumber}
+                      <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
+                        <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
+                          Current Founder rank
+                        </div>
+                        <div className='text-[17px] font-bold text-success'>
+                          {founderRank}
+                        </div>
                       </div>
                     </div>
-                    <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-                      <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
-                        Current Founder rank
-                      </div>
-                      <div className='text-[17px] font-bold text-success'>
-                        {founderRank}
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   <div className='mb-4.5 inline-flex items-center gap-2.5 rounded-full border border-border bg-paper px-4.5 py-2.5 text-sm text-neutral-10'>
                     Today&apos;s window closes in{' '}
                     <b className='text-[15px] text-ink'>{closesClock}</b>
                   </div>
 
-                  <div className='mb-3.5 flex items-center justify-center gap-2 rounded-full bg-surface-2 px-4 py-2.5 text-[12.5px] font-bold text-ink'>
-                    <span>🎯</span>
-                    Share your link — you both earn +5 Founder points
-                  </div>
+                  {doneStanding && (
+                    <>
+                      <div className='mb-3.5 flex items-center justify-center gap-2 rounded-full bg-surface-2 px-4 py-2.5 text-[12.5px] font-bold text-ink'>
+                        <span>🎯</span>
+                        Share your link — you both earn +5 Founder points
+                      </div>
 
-                  <div className='mb-3.5 flex items-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-border px-3.5 py-3'>
-                    <div className='min-w-0 flex-1 truncate text-left text-[12.5px] font-bold text-ink'>
-                      {referLink}
-                    </div>
-                    <button
-                      type='button'
-                      onClick={handleCopy}
-                      className={`btn-lift shrink-0 rounded-lg px-3.5 py-2 text-[11.5px] font-black ${
-                        copied
-                          ? 'bg-success text-white'
-                          : 'bg-dark text-white hover:bg-dark-2 dark:bg-lime dark:text-lime-ink dark:hover:bg-[#cfff3d]'
-                      }`}
-                    >
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
+                      <div className='mb-3.5 flex items-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-border px-3.5 py-3'>
+                        <div className='min-w-0 flex-1 truncate text-left text-[12.5px] font-bold text-ink'>
+                          {referLink}
+                        </div>
+                        <button
+                          type='button'
+                          onClick={handleCopy}
+                          className={`btn-lift shrink-0 rounded-lg px-3.5 py-2 text-[11.5px] font-black ${
+                            copied
+                              ? 'bg-success text-white'
+                              : 'bg-dark text-white hover:bg-dark-2 dark:bg-lime dark:text-lime-ink dark:hover:bg-[#cfff3d]'
+                          }`}
+                        >
+                          {copied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
 
-                  <div className='flex gap-2'>
-                    <a
-                      href={whatsappHref}
-                      target='_blank'
-                      rel='noreferrer'
-                      onClick={() =>
-                        trackEvent({
-                          event: 'referral_share_click',
-                          cta_name: 'market_whatsapp',
-                          share_channel: 'whatsapp',
-                        })
-                      }
-                      className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
-                    >
-                      <WhatsAppIcon />
-                      WhatsApp
-                    </a>
-                    <button
-                      type='button'
-                      onClick={handleCopy}
-                      className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-border bg-surface px-3 py-3 text-[12.5px] font-bold text-ink hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
-                    >
-                      🔗 Copy Link
-                    </button>
-                  </div>
+                      <div className='flex gap-2'>
+                        <a
+                          href={whatsappHref}
+                          target='_blank'
+                          rel='noreferrer'
+                          onClick={() =>
+                            trackEvent({
+                              event: 'referral_share_click',
+                              cta_name: 'market_whatsapp',
+                              share_channel: 'whatsapp',
+                            })
+                          }
+                          className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-success bg-success/10 px-3 py-3 text-[12.5px] font-bold text-success hover:bg-success hover:text-white dark:hover:text-lime-ink'
+                        >
+                          <WhatsAppIcon />
+                          WhatsApp
+                        </a>
+                        <button
+                          type='button'
+                          onClick={handleCopy}
+                          className='btn-lift flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-border bg-surface px-3 py-3 text-[12.5px] font-bold text-ink hover:border-dark hover:bg-surface-2 dark:hover:border-lime'
+                        >
+                          🔗 Copy Link
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setPickedSide(null)
+                      setPhone('')
+                      setCode('')
+                      setEmailFallbackOpen(false)
+                      setEmail('')
+                      setEmailSent(false)
+                      setPlacedUnproven(false)
+                      setErrorMsg(null)
+                      setSwitcherOpen(otherSavedNumbers.length > 0)
+                      setChangingPhone(otherSavedNumbers.length === 0)
+                      setStage('pick')
+                    }}
+                    className='mt-4 block w-full cursor-pointer text-center text-xs font-bold text-muted transition-colors hover:text-[var(--foreground)] hover:underline hover:decoration-lime hover:decoration-2 hover:underline-offset-4 active:opacity-70'
+                  >
+                    Predicting for someone else on this device? Use another
+                    number
+                  </button>
                 </div>
               )}
             </>

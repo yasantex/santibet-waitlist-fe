@@ -8,7 +8,12 @@ import {
   useSantibetQuery,
   useSantibetMutation,
 } from '../data_layer/utils'
+import { shallowEqual } from 'react-redux'
 import { useAppSelector } from '../redux/hooks'
+import {
+  selectDeviceTokens,
+  selectHasVerifiedDevice,
+} from '../redux/campaignSlice'
 import type {
   ActivityItem,
   ActivityToasts,
@@ -36,9 +41,12 @@ export function getApiErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
+/** Every key this device holds, newest first. Web gets them all from the cookie instead. */
 function useCampaignAuthHeaders(): Record<string, string> {
-  const deviceToken = useAppSelector((state) => state.campaign.deviceToken)
-  return deviceToken ? { 'X-Campaign-Token': deviceToken } : {}
+  const deviceTokens = useAppSelector(selectDeviceTokens, shallowEqual)
+  return deviceTokens.length > 0
+    ? { 'X-Campaign-Token': deviceTokens.join(',') }
+    : {}
 }
 
 /**
@@ -217,29 +225,29 @@ export function useLeaderboard(slug: string | null | undefined, limit = 5) {
   })
 }
 
-/** The caller's own standing. Only worth asking once this device looks verified — either we
- *  hold a device token (mobile clients get one in the confirm response body), or we already
- *  have a standing in Redux from a previous confirm/me on this device (web clients only ever
- *  get their token as a cookie, never in the body, so `standing` is the fallback signal). */
+/** Standing of the number the player is predicting as (or the device's most recent number
+ *  when we don't know it). Only worth asking once this device looks verified — web clients
+ *  only ever get their keys as a cookie, so a remembered number or standing is the signal. */
 export function useMe(slug: string | null | undefined) {
-  const deviceToken = useAppSelector((state) => state.campaign.deviceToken)
-  const standing = useAppSelector((state) => state.campaign.standing)
+  const verified = useAppSelector(selectHasVerifiedDevice)
+  const currentPhone = useAppSelector((state) => state.campaign.currentPhone)
   const headers = useCampaignAuthHeaders()
   return useSantibetQuery<ParticipantStanding>({
     path: `${CAMPAIGNS_BASE}/${slug}/me`,
-    enabled: Boolean(slug) && (Boolean(deviceToken) || Boolean(standing)),
+    enabled: Boolean(slug) && verified,
+    params: { phone: currentPhone },
     headers,
     queryOptions: { retry: false },
   })
 }
 
+/** Prizes across every number this device holds a key for, newest first. */
 export function useWinnings() {
-  const deviceToken = useAppSelector((state) => state.campaign.deviceToken)
-  const standing = useAppSelector((state) => state.campaign.standing)
+  const verified = useAppSelector(selectHasVerifiedDevice)
   const headers = useCampaignAuthHeaders()
   return useSantibetQuery<{ data: Winning[] }>({
     path: `${CAMPAIGNS_BASE}/winnings`,
-    enabled: Boolean(deviceToken) || Boolean(standing),
+    enabled: verified,
     headers,
   })
 }
