@@ -70,8 +70,8 @@ export default function Hero() {
   // Falls back to the static figure until /rules loads — this is a hero
   // one-liner, not worth a loading-state layout shift.
   const grandPrizeLabel = launchHeadlineTier
-    ? formatMoney(launchHeadlineTier.amount)
-    : '₦1,000,000'
+    ? formatMoney(launchHeadlineTier.amount, { compact: true })
+    : '₦1M'
   const predictedLabel = (
     stats?.today?.predictions ??
     stats?.totalPredictions ??
@@ -149,11 +149,8 @@ export default function Hero() {
             </div>
 
             <p className='max-w-125 px-2 text-base text-muted font-medium md:px-0'>
-              Make predictions every day, earn Founder Points and unlock rewards.
-              Every correct prediction earns you another chance to qualify for the{' '}
-              <strong className='text-ink font-bold'>
-                {grandPrizeLabel} launch-day grand prize.
-              </strong>
+              Make predictions, earn Founder Points, and get closer to{' '}
+              <strong className='text-ink font-bold'>{grandPrizeLabel}.</strong>
             </p>
             <div className='w-full max-w-110 rounded-2xl border border-border bg-surface px-5 py-3.5 text-left'>
               <div className='mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted'>

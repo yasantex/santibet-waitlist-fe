@@ -20,9 +20,9 @@ export default function Header() {
           <Image
             src='/Santibet Logo.svg'
             alt='SantiBet'
-            width={100}
-            height={38}
-            className='h-11 shrink-0 dark:invert'
+            width={120}
+            height={50}
+            className='h-13 shrink-0 dark:invert'
             priority
           />
         </button>

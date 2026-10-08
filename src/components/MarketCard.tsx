@@ -615,7 +615,7 @@ export default function MarketCard() {
                     {submitting
                       ? 'Submitting…'
                       : showPhoneStep
-                        ? 'Send Verification Code'
+                        ? 'Submit'
                         : 'Confirm prediction'}
                   </button>
 
