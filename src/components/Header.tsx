@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { trackEvent } from '../utils/analytics'
+import { trackEvent } from '../utils/constants'
 
 export default function Header() {
   function handleLogoClick() {
