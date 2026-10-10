@@ -82,7 +82,36 @@ type AnalyticsEvent =
   | { event: 'rules_opened'; cta_name: string }
   | { event: 'founder_tier_opened'; tier: string }
 
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void
+  }
+}
+
+// Waitlist funnel events mirrored to the Meta Pixel. Standard events are used
+// where one fits so Meta can optimise ads against them.
+function trackMetaPixel(payload: AnalyticsEvent) {
+  if (typeof window === 'undefined' || !window.fbq) return
+  switch (payload.event) {
+    case 'waitlist_form_start':
+      window.fbq('trackCustom', 'WaitlistStart', { side: payload.side })
+      break
+    case 'waitlist_form_submit':
+      window.fbq('track', 'Lead', { content_name: payload.form_name })
+      break
+    case 'waitlist_signup_success':
+      window.fbq('track', 'CompleteRegistration', {
+        content_name: payload.form_name,
+        status: true,
+        referred: payload.referred,
+      })
+      break
+  }
+}
+
 export function trackEvent(payload: AnalyticsEvent) {
+  // fbq only exists when NEXT_PUBLIC_META_PIXEL_ID is set (see app/layout.tsx).
+  trackMetaPixel(payload)
   // Without a container ID GTM never loads, so there is no dataLayer to push to.
   if (!process.env.NEXT_PUBLIC_GTM_ID) return
   sendGTMEvent(payload)
