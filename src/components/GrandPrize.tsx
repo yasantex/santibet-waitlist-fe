@@ -2,7 +2,7 @@
 
 import SectionHead from './SectionHead'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
+import { formatMoney } from '../utils/constants'
 import type { PrizeTierRule } from '../types/campaign'
 
 function tierSub(tier: PrizeTierRule) {
