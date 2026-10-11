@@ -191,6 +191,18 @@ export interface PredictionResult {
   /** Only with COMPLETE. False when the call was placed with the phone number
    *  alone (no device token), so the owner can still replace it today. */
   proven?: boolean
+  // Who the call was placed for, on both endings (backend PR #255). Optional until that
+  // ships everywhere. `rank` is as of the last rescore and null until first ranked.
+  participantNumber?: number
+  referralCode?: string
+  rank?: number | null
+}
+
+/** The founder details the done step shows, from the predict response or a standing. */
+export interface PredictionParticipant {
+  participantNumber: number
+  rank: number | null
+  referralCode: string
 }
 
 export interface Winning {

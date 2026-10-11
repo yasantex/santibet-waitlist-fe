@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { founderBenefits } from '../utils/data'
+import { founderBenefits, trackEvent } from '../utils/constants'
 import SectionHead from './SectionHead'
 import LevelInfoModal from './LevelInfoModal'
-import { trackEvent } from '../utils/analytics'
 import { Icon, type IconName } from './icons'
 import { useActiveCampaign, useCampaignRules, useMe } from '../hooks/useCampaign'
 import { useAppSelector } from '../redux/hooks'

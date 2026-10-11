@@ -1,9 +1,8 @@
 'use client'
 
-import { referSteps } from '../utils/data'
+import { referSteps, formatMoney } from '../utils/constants'
 import SectionHead from './SectionHead'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
 import type { ReferralMilestone } from '../types/campaign'
 
 function milestoneReward(m: ReferralMilestone) {

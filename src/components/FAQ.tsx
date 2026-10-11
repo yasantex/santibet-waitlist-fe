@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import SectionHead from './SectionHead'
 import WaitlistRulesModal from './WaitlistRulesModal'
-import { trackEvent } from '../utils/analytics'
+import { trackEvent } from '../utils/constants'
 
 type Faq = { id: string; q: string; a: React.ReactNode }
 

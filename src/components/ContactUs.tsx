@@ -2,8 +2,7 @@
 
 import SectionHead from './SectionHead'
 import SocialIcon from './SocialIcon'
-import { SUPPORT_EMAIL, socialLinks } from '../utils/contact'
-import { trackEvent } from '../utils/analytics'
+import { SUPPORT_EMAIL, socialLinks, trackEvent } from '../utils/constants'
 
 function MailIcon() {
   return (

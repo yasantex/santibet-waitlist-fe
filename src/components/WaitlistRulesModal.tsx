@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Modal from './Modal'
 import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
+import { formatMoney } from '../utils/constants'
 import type { CampaignRules, Money, PrizePeriod, PrizeTierRule } from '../types/campaign'
 
 type WaitlistRulesModalProps = {

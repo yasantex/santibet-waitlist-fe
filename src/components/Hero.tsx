@@ -10,9 +10,8 @@ import {
   useCampaignRules,
   useMe,
 } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
+import { formatMoney, trackEvent } from '../utils/constants'
 import { useAppSelector } from '../redux/hooks'
-import { trackEvent } from '../utils/analytics'
 
 function WhatsAppIcon() {
   return (

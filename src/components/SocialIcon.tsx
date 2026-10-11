@@ -1,4 +1,4 @@
-import type { SocialName } from '../utils/contact'
+import type { SocialName } from '../utils/constants'
 
 // Stroke-style marks to match the outline icons in ./icons.
 const PATHS: Record<SocialName, React.ReactNode> = {

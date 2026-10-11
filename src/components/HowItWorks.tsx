@@ -1,4 +1,4 @@
-import { journeySteps } from '../utils/data'
+import { journeySteps } from '../utils/constants'
 import SectionHead from './SectionHead'
 import { Icon } from './icons'
 

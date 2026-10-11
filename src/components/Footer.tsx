@@ -1,8 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { trackEvent } from '../utils/analytics'
-import { SUPPORT_EMAIL } from '../utils/contact'
+import { trackEvent, SUPPORT_EMAIL } from '../utils/constants'
 
 export default function Footer() {
   const year = new Date().getFullYear()

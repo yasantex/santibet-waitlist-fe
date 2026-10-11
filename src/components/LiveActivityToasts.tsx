@@ -7,7 +7,7 @@ import {
   useActiveCampaign,
   useCampaignActivityStream,
 } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
+import { formatMoney } from '../utils/constants'
 import type { ActivityToasts } from '../types/campaign'
 
 /** One sentence per kind: the player when it's a single event, the count when it's several. */

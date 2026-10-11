@@ -8,7 +8,7 @@ import {
   useCampaignActivity,
   usePreviousQuestion,
 } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/money'
+import { formatMoney } from '../utils/constants'
 import type { ActivityItem } from '../types/campaign'
 
 function timeAgo(iso: string, now: number) {
