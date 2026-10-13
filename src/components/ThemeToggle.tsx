@@ -6,7 +6,8 @@ export default function ThemeToggle() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <div className='fixed bottom-4 right-4 z-50 flex items-center gap-0.5 rounded-full border border-border bg-surface p-1 shadow-lg'>
+    // Sits just above the footer, which publishes its height as --footer-h.
+    <div className='fixed right-4 bottom-[calc(var(--footer-h,0px)+12px)] z-50 flex items-center gap-0.5 rounded-full border border-border bg-surface p-1 shadow-lg'>
       <button
         type='button'
         onClick={() => setTheme('light')}

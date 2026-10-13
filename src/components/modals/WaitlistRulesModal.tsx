@@ -2,16 +2,17 @@
 
 import { useMemo } from 'react'
 import Modal from './Modal'
-import { useActiveCampaign, useCampaignRules } from '../hooks/useCampaign'
-import { formatMoney } from '../utils/constants'
-import type { CampaignRules, Money, PrizePeriod, PrizeTierRule } from '../types/campaign'
+import { useActiveCampaign, useCampaignRules } from '../../hooks/useCampaign'
+import { formatMoney } from '../../utils/constants'
+import { primaryButtonClass } from '../market-card/utils'
+import type { CampaignRules, Money, PrizePeriod, PrizeTierRule } from '../../types/campaign'
 
 type WaitlistRulesModalProps = {
   open: boolean
   onClose: () => void
 }
 
-type Section = {
+export type RulesSection = {
   title: string
   items: string[]
 }
@@ -22,6 +23,8 @@ type Section = {
 const FALLBACK_DAILY_WEEKLY = '₦5,000'
 const FALLBACK_GRAND_PRIZE = '₦1,000,000'
 const FALLBACK_LAUNCH_DATE = '1 November 2026'
+
+export const PRIVACY_SECTION_TITLE = 'Privacy & Analytics'
 
 function highestTierAcross(rules: CampaignRules, periods: PrizePeriod[]): Money | null {
   let best: PrizeTierRule | null = null
@@ -51,7 +54,7 @@ function formatLaunchDate(iso: string | null | undefined) {
   }).format(new Date(iso))
 }
 
-function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launchDateLabel: string): Section[] {
+function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launchDateLabel: string): RulesSection[] {
   return [
     {
       title: 'How to Play',
@@ -77,7 +80,7 @@ function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launch
       ],
     },
     {
-      title: 'Privacy & Analytics',
+      title: PRIVACY_SECTION_TITLE,
       items: [
         'Analytics Cookies: We use Google Analytics, through Google Tag Manager, to understand how people use this page — such as visits, predictions made and links shared. This uses cookies and similar technologies.',
         'What We Collect: Usage data like pages viewed, device and browser type, approximate location and the actions you take on the page. We never send your phone number, email or verification codes to Google Analytics.',
@@ -87,14 +90,12 @@ function buildSections(dailyWeeklyLabel: string, grandPrizeLabel: string, launch
   ]
 }
 
-export default function WaitlistRulesModal({
-  open,
-  onClose,
-}: WaitlistRulesModalProps) {
+/** The rules, with live prize figures once /rules loads and static fallbacks until then. */
+export function useRulesSections() {
   const { activeCampaign } = useActiveCampaign()
   const { data: rules } = useCampaignRules(activeCampaign?.slug)
 
-  const sections = useMemo(() => {
+  return useMemo(() => {
     const dailyWeeklyLabel = rules
       ? (() => {
           const amount = highestTierAcross(rules, ['DAILY', 'WEEKLY'])
@@ -110,43 +111,57 @@ export default function WaitlistRulesModal({
 
     return buildSections(dailyWeeklyLabel, grandPrizeLabel, launchDateLabel)
   }, [rules, activeCampaign?.launchAt])
+}
+
+export function RulesSections({ sections }: { sections: RulesSection[] }) {
+  return (
+    <div className='flex flex-col gap-5 text-sm leading-6 text-muted'>
+      {sections.map((section) => (
+        <section key={section.title}>
+          <h4 className='mb-2 font-display text-base font-bold text-foreground'>
+            {section.title}
+          </h4>
+          <ul className='list-disc space-y-1.5 pl-5'>
+            {section.items.map((item) => {
+              const [label, ...rest] = item.split(': ')
+              const description = rest.join(': ')
+              return (
+                <li key={label}>
+                  <strong className='font-semibold text-foreground'>{label}:</strong>{' '}
+                  {description}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+export default function WaitlistRulesModal({
+  open,
+  onClose,
+}: WaitlistRulesModalProps) {
+  const sections = useRulesSections()
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title='SantiBet Waitlist & Prediction Rules'
+      maxWidth='max-w-150'
       footer={
         <button
           type='button'
           onClick={onClose}
-          className='btn-3d [--btn-depth:5px] w-full rounded-xl bg-lime px-6 py-3.75 font-black text-lime-ink dark:text-[#10230a]!'
+          className={primaryButtonClass(true)}
         >
           Got it, let&apos;s predict!
         </button>
       }
     >
-      <div className='flex flex-col gap-5 text-sm leading-6 text-muted'>
-        {sections.map((section) => (
-          <section key={section.title}>
-            <h4 className='mb-2 font-display text-base font-black text-ink'>
-              {section.title}
-            </h4>
-            <ul className='list-disc space-y-1.5 pl-5'>
-              {section.items.map((item) => {
-                const [label, ...rest] = item.split(': ')
-                const description = rest.join(': ')
-                return (
-                  <li key={label}>
-                    <strong className='font-bold text-ink'>{label}:</strong>{' '}
-                    {description}
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
+      <RulesSections sections={sections} />
     </Modal>
   )
 }

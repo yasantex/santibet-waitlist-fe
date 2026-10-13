@@ -10,8 +10,8 @@ export default function Toaster() {
     <SonnerToaster
       theme={theme}
       position='top-right'
-      offset={{ top: 50 }}
-      mobileOffset={{ top: 50 }}
+      offset={{ top: 100 }}
+      mobileOffset={{ top: 100 }}
       visibleToasts={3}
       toastOptions={{
         unstyled: true,

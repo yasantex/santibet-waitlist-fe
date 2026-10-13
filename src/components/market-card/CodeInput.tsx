@@ -65,7 +65,7 @@ export default function CodeInput({ value: code, onChange }: CodeInputProps) {
   }
 
   return (
-    <div className='mb-3.5 flex gap-2'>
+    <div className='mb-3 flex justify-center gap-1.5 sm:gap-2'>
       {Array.from({ length: CODE_LENGTH }).map((_, i) => (
         <input
           key={i}
@@ -82,8 +82,8 @@ export default function CodeInput({ value: code, onChange }: CodeInputProps) {
           onKeyDown={(e) => handleBoxKeyDown(i, e)}
           onPaste={(e) => handlePaste(i, e)}
           onFocus={(e) => e.target.select()}
-          className={`h-13 w-full flex-1 rounded-[10px] border-[1.5px] bg-surface text-center text-xl font-black text-ink transition-colors ${
-            code[i] ? 'border-lime' : 'border-border'
+          className={`h-12 w-full max-w-12 min-w-0 flex-1 rounded-xl border-[1.5px] text-center text-lg font-bold text-foreground outline-none transition-[border-color,box-shadow,background-color] focus:border-success focus:shadow-[0_0_0_3px_rgb(22_163_74/0.15)] ${
+            code[i] ? 'border-success bg-success/10' : 'border-border bg-surface'
           }`}
         />
       ))}
