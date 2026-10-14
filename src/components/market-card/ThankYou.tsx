@@ -39,6 +39,19 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
+// Shown in the address bar while the screen is open, so GA4 and Meta can count it by URL.
+const STEP_PARAM = 'step'
+const STEP_VALUE = 'thank-you'
+
+/** Sets or clears ?step=thank-you without reloading, keeping any other params (e.g. ?ref=). */
+function setStepParam(on: boolean, mode: 'push' | 'replace') {
+  const url = new URL(window.location.href)
+  if ((url.searchParams.get(STEP_PARAM) === STEP_VALUE) === on) return
+  if (on) url.searchParams.set(STEP_PARAM, STEP_VALUE)
+  else url.searchParams.delete(STEP_PARAM)
+  window.history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', url)
+}
+
 /** Full-page "You're in" screen shown right after a prediction is locked. */
 export default function ThankYou({
   open,
@@ -50,6 +63,23 @@ export default function ThankYou({
   onClose,
   onPredictAnother,
 }: ThankYouProps) {
+  // A refreshed or shared ?step=thank-you link has no prediction behind it — drop the param.
+  useEffect(() => {
+    setStepParam(false, 'replace')
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    setStepParam(true, 'push')
+    // The browser's back button leaves the step, so close the screen with it.
+    const onPopState = () => onClose()
+    window.addEventListener('popstate', onPopState)
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      setStepParam(false, 'replace')
+    }
+  }, [open, onClose])
+
   useEffect(() => {
     if (!open) return
     const previousOverflow = document.body.style.overflow

@@ -89,6 +89,8 @@ type AnalyticsEvent =
   | { event: 'referral_share_click'; cta_name: string; share_channel: 'whatsapp' | 'native' }
   | { event: 'rules_opened'; cta_name: string }
   | { event: 'founder_tier_opened'; tier: string }
+  // The "You're in" screen after a confirmed prediction. `new` = first-time signup.
+  | { event: 'thank_you_view'; user_type: 'new' | 'returning' }
 
 declare global {
   interface Window {
@@ -113,6 +115,9 @@ function trackMetaPixel(payload: AnalyticsEvent) {
         status: true,
         referred: payload.referred,
       })
+      break
+    case 'thank_you_view':
+      window.fbq('trackCustom', 'ThankYouView', { user_type: payload.user_type })
       break
   }
 }

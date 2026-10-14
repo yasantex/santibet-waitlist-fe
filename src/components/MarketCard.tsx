@@ -91,6 +91,12 @@ export default function MarketCard() {
   const [howToOpen, setHowToOpen] = useState(false)
   const [thankYouOpen, setThankYouOpen] = useState(false)
   const closeThankYou = useCallback(() => setThankYouOpen(false), [])
+
+  /** Opens the thank-you screen after a confirmed prediction and counts the view. */
+  function showThankYou(userType: 'new' | 'returning') {
+    setThankYouOpen(true)
+    trackEvent({ event: 'thank_you_view', user_type: userType })
+  }
   const [placedUnproven, setPlacedUnproven] = useState(false)
   /** Who the last prediction was placed for, as the predict response reports it. */
   const [placedParticipant, setPlacedParticipant] =
@@ -259,7 +265,8 @@ export default function MarketCard() {
       }
       setChangingPhone(false)
       setStage('done')
-      setThankYouOpen(true)
+      // No code was needed, so this number has played before — not a new signup.
+      showThankYou('returning')
       trackEvent({ event: 'prediction_confirmed', side: pickedSide })
     } catch (err) {
       const info = errorInfo(err)
@@ -308,7 +315,7 @@ export default function MarketCard() {
       setPlacedUnproven(false)
       setPlacedParticipant(null)
       setStage('done')
-      setThankYouOpen(true)
+      showThankYou(knownReturningPlayer ? 'returning' : 'new')
       trackEvent({
         event: 'verification_completed',
         form_name: 'waitlist',
