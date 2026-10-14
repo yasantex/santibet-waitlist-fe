@@ -1,7 +1,7 @@
 'use client'
 
 import Modal from './Modal'
-import type { CampaignLevel, ScoringRules } from '../types/campaign'
+import type { CampaignLevel, ScoringRules } from '../../types/campaign'
 
 type LevelInfoModalProps = {
   open: boolean
@@ -81,14 +81,14 @@ export default function LevelInfoModal({
     >
       <div className='flex flex-col gap-5 text-sm leading-6 text-muted'>
         <section>
-          <h4 className='mb-1.5 font-display text-base font-black text-ink'>
+          <h4 className='mb-1.5 font-display text-base font-bold text-foreground'>
             Who is a{/^[aeiou]/i.test(level.name) ? 'n' : ''} {level.name}?
           </h4>
           <p>{description}</p>
         </section>
 
         <section>
-          <h4 className='mb-1.5 font-display text-base font-black text-ink'>
+          <h4 className='mb-1.5 font-display text-base font-bold text-foreground'>
             How to get there
           </h4>
           <p>
@@ -100,7 +100,7 @@ export default function LevelInfoModal({
             {isTop && ' This is the highest tier — there is nowhere left to climb.'}
           </p>
           {toGo != null && (
-            <p className='mt-2 font-bold text-ink'>
+            <p className='mt-2 font-semibold text-foreground'>
               {toGo > 0
                 ? `You have ${pts(myPoints!)} — ${pts(toGo)} to go.`
                 : `You have ${pts(myPoints!)} — you've already reached this tier.`}
@@ -110,7 +110,7 @@ export default function LevelInfoModal({
 
         {earnWays.length > 0 && (
           <section>
-            <h4 className='mb-1.5 font-display text-base font-black text-ink'>
+            <h4 className='mb-1.5 font-display text-base font-bold text-foreground'>
               Ways to earn points
             </h4>
             <ul className='list-disc space-y-1 pl-5'>
@@ -122,7 +122,7 @@ export default function LevelInfoModal({
         )}
 
         <section className='border-t border-dashed border-border pt-4'>
-          <h4 className='mb-1.5 font-display text-base font-black text-ink'>
+          <h4 className='mb-1.5 font-display text-base font-bold text-foreground'>
             What is a Founder?
           </h4>
           <p>

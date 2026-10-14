@@ -35,7 +35,6 @@
   --color-surface-2: #f0f1ee;
   --color-muted: #4b5a52;
   --color-neutral-10: #7c8b82;
-  --font-outfit: 'Outfit', sans-serif;
   --color-error: #ef4444;
   --color-error-bg: #ffeded;
   --color-surface-error: #fff2f2;
@@ -53,8 +52,8 @@
   --color-placeholder: #4b5a52;
   --color-market-success: #183123;
   --color-market-error: #341f20;
-  --font-display: var(--font-outfit), sans-serif;
-  --font-body: var(--font-outfit), sans-serif;
+  --font-display: var(--font-poppins), sans-serif;
+  --font-body: var(--font-poppins), sans-serif;
 }
 
 .dark {
@@ -81,7 +80,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-poppins), sans-serif;
   line-height: 1.5;
 }
 
@@ -93,8 +92,11 @@ body {
   }
 }
 
-a {
-  color: inherit;
+/* Layered so utility classes can still colour links. */
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 a:focus-visible,
@@ -106,33 +108,6 @@ input:focus-visible {
 
 /* Interactive states. Hover styles are gated on (hover: hover) so taps on
    touch screens don't leave a button stuck in its hover state. */
-
-/* Chunky lime CTA with a solid "ledge" shadow: rises and glows on hover,
-   presses flat on click. Override the ledge with [--btn-depth:5px]. */
-@utility btn-3d {
-  --btn-depth: 6px;
-  cursor: pointer;
-  box-shadow: 0 var(--btn-depth) 0 #8fc200;
-  transition:
-    transform 150ms ease,
-    box-shadow 150ms ease,
-    background-color 150ms ease;
-
-  @media (hover: hover) {
-    &:hover {
-      background-color: #cfff3d;
-      transform: translateY(-2px);
-      box-shadow:
-        0 calc(var(--btn-depth) + 2px) 0 #8fc200,
-        0 16px 28px -12px rgb(143 194 0 / 0.85);
-    }
-  }
-
-  &:active {
-    transform: translateY(var(--btn-depth));
-    box-shadow: 0 0 0 #8fc200;
-  }
-}
 
 /* Smaller buttons, pills and cards: lift with a soft shadow on hover. */
 @utility btn-lift {
@@ -224,6 +199,58 @@ input:focus-visible {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+@keyframes ringPulse {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 @keyframes ticker {
   from {
     transform: translateX(0);
@@ -238,11 +265,47 @@ input:focus-visible {
 }
 
 .animate-ticker {
-  animation: ticker 22s linear infinite;
+  animation: ticker 25s linear infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+
+/* Headline text filled with a slowly drifting gradient (set the colours with bg-linear-*). */
+.animate-gradient-text {
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 3s ease infinite;
+}
+
+.animate-ring-pulse {
+  animation: ringPulse 2s ease-out infinite;
+}
+
+.animate-scale-in {
+  animation: scaleIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-ticker {
+  .animate-ticker,
+  .animate-shimmer,
+  .animate-gradient-text,
+  .animate-ring-pulse {
     animation: none;
   }
 }

@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Clock01Icon, HelpCircleIcon } from '@hugeicons/core-free-icons'
 import { PredictionSide } from '../utils/types'
 import {
   getApiErrorMessage,
   useActiveCampaign,
+  useCampaignRules,
   useCampaignStats,
   useConfirmVerification,
   useMe,
@@ -21,14 +24,15 @@ import {
   setStanding,
   switchNumber,
 } from '../redux/campaignSlice'
-import { errorInfo, trackEvent } from '../utils/constants'
+import { errorInfo, formatMoney, trackEvent } from '../utils/constants'
 import type { PredictionParticipant } from '../types/campaign'
-import WaitlistRulesModal from './WaitlistRulesModal'
-import StepProgress from './market-card/StepProgress'
+import WaitlistRulesModal from './modals/WaitlistRulesModal'
+import HowToPlayModal from './modals/HowToPlayModal'
 import PickStep from './market-card/PickStep'
 import PhoneStep from './market-card/PhoneStep'
 import CodeStep from './market-card/CodeStep'
 import DoneStep from './market-card/DoneStep'
+import ThankYou from './market-card/ThankYou'
 import {
   CODE_LENGTH,
   RESEND_COOLDOWN_SECONDS,
@@ -36,6 +40,14 @@ import {
   maskPhone,
   type Stage,
 } from './market-card/utils'
+
+/** The API's ALREADY_PREDICTED message says "today", which is wrong once two questions can
+ *  open on one calendar date — say it in our own words. */
+function predictErrorMessage(err: unknown, fallback: string) {
+  return errorInfo(err).error_code === 'ALREADY_PREDICTED'
+    ? "You've already answered this one."
+    : getApiErrorMessage(err, fallback)
+}
 
 export default function MarketCard() {
   const dispatch = useAppDispatch()
@@ -46,11 +58,13 @@ export default function MarketCard() {
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
   const { data: stats } = useCampaignStats(slug)
+  const { data: rules } = useCampaignRules(slug)
   const {
     data: todayQuestion,
     isLoading: questionLoading,
     isError: todayQuestionError,
     error: todayQuestionErrorDetail,
+    refetch: refetchTodayQuestion,
   } = useTodayQuestion(slug)
   const { data: meData } = useMe(slug)
   const standing = meData ?? cachedStanding
@@ -74,6 +88,15 @@ export default function MarketCard() {
   const [resendCooldown, setResendCooldown] = useState(0)
   const [emailSent, setEmailSent] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [howToOpen, setHowToOpen] = useState(false)
+  const [thankYouOpen, setThankYouOpen] = useState(false)
+  const closeThankYou = useCallback(() => setThankYouOpen(false), [])
+
+  /** Opens the thank-you screen after a confirmed prediction and counts the view. */
+  function showThankYou(userType: 'new' | 'returning') {
+    setThankYouOpen(true)
+    trackEvent({ event: 'thank_you_view', user_type: userType })
+  }
   const [placedUnproven, setPlacedUnproven] = useState(false)
   /** Who the last prediction was placed for, as the predict response reports it. */
   const [placedParticipant, setPlacedParticipant] =
@@ -83,6 +106,33 @@ export default function MarketCard() {
       ? undefined
       : (new URLSearchParams(window.location.search).get('ref') ?? undefined),
   )
+
+  // A campaign day is not a calendar date: the next question can open the moment this one
+  // closes, so a new campaignDay means a fresh card even if the player answered earlier today.
+  const openDay = todayQuestion?.campaignDay ?? null
+  const [shownDay, setShownDay] = useState(openDay)
+  if (openDay !== null && openDay !== shownDay) {
+    setShownDay(openDay)
+    if (shownDay !== null) {
+      setPickedSide(null)
+      setCode('')
+      setEmailSent(false)
+      setPlacedUnproven(false)
+      setPlacedParticipant(null)
+      setErrorMsg(null)
+      setChangingPhone(false)
+      setSwitcherOpen(false)
+      setThankYouOpen(false)
+      setStage('pick')
+    }
+  }
+
+  // closesAt is only an upper bound on the real deadline, but once it passes the question
+  // has certainly closed — check straight away rather than waiting for the next poll.
+  const closesReached = closes?.reached ?? false
+  useEffect(() => {
+    if (closesReached) refetchTodayQuestion()
+  }, [closesReached, refetchTodayQuestion])
 
   useEffect(() => {
     if (meData) dispatch(setStanding(meData))
@@ -124,6 +174,29 @@ export default function MarketCard() {
   // Which channel delivered the code the player is about to confirm.
   const verificationMethod = emailSent ? 'email' : 'phone'
   const loading = campaignLoading || (Boolean(slug) && questionLoading)
+  // stats.today can describe a different campaign day than the open question.
+  const openDayStats =
+    stats?.today && stats.today.campaignDay === openDay ? stats.today : null
+  const predictionCount = (
+    openDayStats?.predictions ??
+    stats?.totalPredictions ??
+    0
+  ).toLocaleString()
+  const closesAtLabel = todayQuestion
+    ? new Intl.DateTimeFormat('en-GB', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: activeCampaign?.timeZone,
+      }).format(new Date(todayQuestion.closesAt))
+    : null
+  const launchHeadlineTier = rules?.prizes
+    .find((p) => p.period === 'LAUNCH')
+    ?.tiers.slice()
+    .sort((a, b) => a.place - b.place)[0]
+  const grandPrizeLabel = launchHeadlineTier
+    ? formatMoney(launchHeadlineTier.amount, { compact: true })
+    : '₦1M'
 
   function startCodeEntry(sentTo: string, cooldown = RESEND_COOLDOWN_SECONDS) {
     setDestination(sentTo)
@@ -192,6 +265,8 @@ export default function MarketCard() {
       }
       setChangingPhone(false)
       setStage('done')
+      // No code was needed, so this number has played before — not a new signup.
+      showThankYou('returning')
       trackEvent({ event: 'prediction_confirmed', side: pickedSide })
     } catch (err) {
       const info = errorInfo(err)
@@ -206,9 +281,9 @@ export default function MarketCard() {
         )
         return
       }
-      setErrorMsg(
-        getApiErrorMessage(err, 'Something went wrong. Please try again.'),
-      )
+      setErrorMsg(predictErrorMessage(err, 'Something went wrong. Please try again.'))
+      // The question may have closed before its countdown ran out — see what's open now.
+      refetchTodayQuestion()
       trackEvent({
         event: 'api_request_failed',
         form_name: 'waitlist',
@@ -240,6 +315,7 @@ export default function MarketCard() {
       setPlacedUnproven(false)
       setPlacedParticipant(null)
       setStage('done')
+      showThankYou(knownReturningPlayer ? 'returning' : 'new')
       trackEvent({
         event: 'verification_completed',
         form_name: 'waitlist',
@@ -258,9 +334,8 @@ export default function MarketCard() {
             },
       )
     } catch (err) {
-      setErrorMsg(
-        getApiErrorMessage(err, 'That code is invalid or has expired.'),
-      )
+      setErrorMsg(predictErrorMessage(err, 'That code is invalid or has expired.'))
+      refetchTodayQuestion()
       const info = errorInfo(err)
       trackEvent({
         event: 'verification_failed',
@@ -352,136 +427,173 @@ export default function MarketCard() {
   }
 
   return (
-    <div className='mx-auto max-w-180'>
-      {/* Slip masthead */}
-      <div className='flex items-center justify-between rounded-t-2xl bg-dark px-6 py-3 dark:bg-lime'>
-        <span className='text-base font-bold uppercase tracking-[0.05em] text-white dark:text-lime-ink'>
-          SantiBet Slip
-        </span>
-        <span
-          aria-hidden='true'
-          className='barcode h-3 w-16 text-lime dark:text-lime-ink'
-        />
-      </div>
+    <div
+      id='market'
+      className='relative scroll-mt-28 overflow-hidden rounded-[20px] border border-border bg-surface p-4 shadow-[0_8px_32px_rgb(0_0_0/0.08)] sm:p-5 dark:shadow-[0_8px_32px_rgb(0_0_0/0.4)]'
+    >
+      <span
+        aria-hidden='true'
+        className='absolute inset-x-0 top-0 h-px bg-linear-90 from-transparent via-lime to-transparent'
+      />
 
-      {/* Perforated seam + body */}
-      <div className='relative'>
-        <span className='absolute -top-3 -left-3 h-6 w-6 rounded-full bg-paper' />
-        <span className='absolute -top-3 -right-3 h-6 w-6 rounded-full bg-paper' />
-
-        <div className='rounded-b-2xl border-2 border-t-0 border-dark bg-surface dark:border-lime'>
-          {loading ? (
-            <div className='px-7.5 pt-8.5 pb-8.5 text-center text-lg text-neutral-10'>
-              Loading today&apos;s market…
-            </div>
-          ) : !slug || todayQuestionError || !todayQuestion ? (
-            <div className='px-7.5 pt-8.5 pb-8.5 text-center'>
-              <div className='mb-2 font-display text-[22px] font-bold text-ink'>
-                No market open right now
-              </div>
-              <div className='text-lg text-placeholder'>
-                Check back soon — a new question opens every campaign day.
-              </div>
-            </div>
-          ) : (
-            <>
-              <StepProgress stage={stage} />
-
-              {stage === 'pick' && (
-                <PickStep
-                  question={todayQuestion.text}
-                  stats={stats}
-                  closesClock={closesClock}
-                  pickedSide={pickedSide}
-                  predictingAsLabel={predictingAsLabel}
-                  onPick={handlePick}
-                />
-              )}
-
-              {stage === 'phone' && pickedSide && (
-                <PhoneStep
-                  pickedSide={pickedSide}
-                  predictingAsLabel={predictingAsLabel}
-                  otherNumbers={otherSavedNumbers}
-                  enteringNumber={changingPhone}
-                  switcherOpen={switcherOpen}
-                  phone={phone}
-                  submitting={submitting}
-                  errorMsg={errorMsg}
-                  onPhoneChange={setPhone}
-                  onToggleSwitcher={() => {
-                    setSwitcherOpen((v) => !v)
-                    setErrorMsg(null)
-                  }}
-                  onSwitch={(next) => {
-                    dispatch(switchNumber(next))
-                    setSwitcherOpen(false)
-                    setErrorMsg(null)
-                  }}
-                  onAddNumber={() => {
-                    setSwitcherOpen(false)
-                    setChangingPhone(true)
-                    setPhone('')
-                    setErrorMsg(null)
-                  }}
-                  onCancelAddNumber={() => {
-                    setChangingPhone(false)
-                    setPhone('')
-                    setErrorMsg(null)
-                  }}
-                  onSubmit={handleSubmit}
-                  onOpenRules={() => {
-                    setRulesOpen(true)
-                    trackEvent({
-                      event: 'rules_opened',
-                      cta_name: 'market_rules_link',
-                    })
-                  }}
-                  onBack={() => {
-                    setStage('pick')
-                    setChangingPhone(false)
-                    setSwitcherOpen(false)
-                    setEmailSent(false)
-                    setErrorMsg(null)
-                  }}
-                />
-              )}
-
-              {stage === 'code' && (
-                <CodeStep
-                  destination={destination}
-                  code={code}
-                  resendCooldown={resendCooldown}
-                  resending={resendMutation.isPending}
-                  emailSent={emailSent}
-                  sendingEmail={emailVerificationMutation.isPending}
-                  submitting={submitting}
-                  errorMsg={errorMsg}
-                  onCodeChange={setCode}
-                  onResend={handleResendCode}
-                  onSendEmail={handleSendEmailCode}
-                  onConfirm={handleConfirmCode}
-                  onBack={() => {
-                    setStage('phone')
-                    setEmailSent(false)
-                    setErrorMsg(null)
-                  }}
-                />
-              )}
-
-              {stage === 'done' && (
-                <DoneStep
-                  pickedSide={pickedSide}
-                  founder={doneFounder}
-                  closesClock={closesClock}
-                  onPredictAnother={handlePredictAnother}
-                />
-              )}
-            </>
-          )}
+      {loading ? (
+        <div className='py-10 text-center text-sm text-muted'>
+          Loading the question…
         </div>
-      </div>
+      ) : !slug || todayQuestionError || !todayQuestion ? (
+        <div className='py-10 text-center'>
+          <div className='mb-1.5 text-lg font-bold text-foreground'>
+            No question open right now
+          </div>
+          <div className='text-sm text-muted'>
+            The next question is coming up — this updates on its own.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className='mb-3 flex items-center justify-between gap-3'>
+            <span className='flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-muted uppercase'>
+              <span className='animate-pulse-dot h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_6px_var(--color-success)]' />
+              Day {todayQuestion.campaignDay} Question
+            </span>
+            <span
+              aria-label={`Closes in ${closesClock}`}
+              className='flex items-center gap-1 rounded-full border border-success/40 bg-dark px-2.5 py-1 text-xs font-bold text-lime tabular-nums dark:bg-[#000]/40'
+            >
+              <HugeiconsIcon icon={Clock01Icon} size={13} />
+              {closesClock}
+            </span>
+          </div>
 
+          <h2 className='mb-4 text-[17px] leading-snug font-semibold tracking-[-0.01em] text-foreground sm:text-lg'>
+            {todayQuestion.text}
+          </h2>
+
+          <div className='mb-3.5'>
+            {stage === 'pick' && (
+              <PickStep
+                yesPercent={openDayStats?.yesPercent ?? null}
+                pickedSide={pickedSide}
+                predictingAsLabel={predictingAsLabel}
+                onPick={handlePick}
+              />
+            )}
+
+            {stage === 'phone' && pickedSide && (
+              <PhoneStep
+                pickedSide={pickedSide}
+                predictingAsLabel={predictingAsLabel}
+                otherNumbers={otherSavedNumbers}
+                enteringNumber={changingPhone}
+                switcherOpen={switcherOpen}
+                phone={phone}
+                submitting={submitting}
+                errorMsg={errorMsg}
+                onPhoneChange={setPhone}
+                onToggleSwitcher={() => {
+                  setSwitcherOpen((v) => !v)
+                  setErrorMsg(null)
+                }}
+                onSwitch={(next) => {
+                  dispatch(switchNumber(next))
+                  setSwitcherOpen(false)
+                  setErrorMsg(null)
+                }}
+                onAddNumber={() => {
+                  setSwitcherOpen(false)
+                  setChangingPhone(true)
+                  setPhone('')
+                  setErrorMsg(null)
+                }}
+                onCancelAddNumber={() => {
+                  setChangingPhone(false)
+                  setPhone('')
+                  setErrorMsg(null)
+                }}
+                onSubmit={handleSubmit}
+                onOpenRules={() => {
+                  setRulesOpen(true)
+                  trackEvent({
+                    event: 'rules_opened',
+                    cta_name: 'market_rules_link',
+                  })
+                }}
+                onBack={() => {
+                  setStage('pick')
+                  setChangingPhone(false)
+                  setSwitcherOpen(false)
+                  setEmailSent(false)
+                  setErrorMsg(null)
+                }}
+              />
+            )}
+
+            {stage === 'code' && (
+              <CodeStep
+                destination={destination}
+                code={code}
+                resendCooldown={resendCooldown}
+                resending={resendMutation.isPending}
+                emailSent={emailSent}
+                sendingEmail={emailVerificationMutation.isPending}
+                submitting={submitting}
+                errorMsg={errorMsg}
+                onCodeChange={setCode}
+                onResend={handleResendCode}
+                onSendEmail={handleSendEmailCode}
+                onConfirm={handleConfirmCode}
+                onBack={() => {
+                  setStage('phone')
+                  setEmailSent(false)
+                  setErrorMsg(null)
+                }}
+              />
+            )}
+
+            {stage === 'done' && (
+              <DoneStep
+                pickedSide={pickedSide}
+                closesClock={closesClock}
+                onViewEntry={() => setThankYouOpen(true)}
+                onPredictAnother={handlePredictAnother}
+              />
+            )}
+          </div>
+
+          <div className='flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted'>
+            <span>
+              <strong className='font-semibold text-foreground'>{predictionCount}</strong>{' '}
+              predictions
+            </span>
+            <button
+              type='button'
+              onClick={() => setHowToOpen(true)}
+              className='btn-lift flex items-center gap-1 rounded-full border border-dark/20 bg-lime/20 px-2.5 py-1 text-[11px] font-semibold text-dark dark:border-lime/25 dark:bg-lime/10 dark:text-lime'
+            >
+              <HugeiconsIcon icon={HelpCircleIcon} size={13} />
+              How to Play
+            </button>
+            {closesAtLabel && (
+              <span>
+                Closes at{' '}
+                <strong className='font-semibold text-foreground'>{closesAtLabel}</strong>
+              </span>
+            )}
+          </div>
+        </>
+      )}
+
+      <ThankYou
+        open={thankYouOpen && stage === 'done'}
+        pickedSide={pickedSide}
+        founder={doneFounder}
+        closesClock={closesClock}
+        grandPrizeLabel={grandPrizeLabel}
+        referralPoints={rules?.scoring.pointsPerReferral ?? null}
+        onClose={closeThankYou}
+        onPredictAnother={handlePredictAnother}
+      />
+      <HowToPlayModal open={howToOpen} onClose={() => setHowToOpen(false)} />
       <WaitlistRulesModal
         open={rulesOpen}
         onClose={() => setRulesOpen(false)}

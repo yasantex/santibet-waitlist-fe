@@ -200,11 +200,20 @@ export function useCampaignActivityStream(
   }, [slug, queryClient])
 }
 
+/**
+ * The question open right now: a 200 means open, a 404 NO_OPEN_QUESTION means nothing is.
+ * Never judge openness from `opensAt` — a question opened early (when the previous one
+ * closed) has an `opensAt` still in the future. While nothing is open we poll faster, since
+ * the next question can appear within about a minute of the last one closing.
+ */
 export function useTodayQuestion(slug: string | null | undefined) {
   return useSantibetQuery<TodayQuestion>({
     path: `${CAMPAIGNS_BASE}/${slug}/questions/today`,
     enabled: Boolean(slug),
-    queryOptions: { retry: false, refetchInterval: 30_000 },
+    queryOptions: {
+      retry: false,
+      refetchInterval: (query) => (query.state.status === 'error' ? 15_000 : 30_000),
+    },
   })
 }
 
@@ -239,6 +248,13 @@ export function useMe(slug: string | null | undefined) {
     headers,
     queryOptions: { retry: false },
   })
+}
+
+/** The current number's standing: live from /me, or the copy cached on this device. */
+export function useStanding(slug: string | null | undefined) {
+  const { data } = useMe(slug)
+  const cached = useAppSelector((state) => state.campaign.standing)
+  return data ?? cached
 }
 
 /** Prizes across every number this device holds a key for, newest first. */

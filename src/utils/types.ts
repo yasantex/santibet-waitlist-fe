@@ -1,19 +1,8 @@
-export type PredictionSide = "yes" | "no";
+import type { IconSvgElement } from '@hugeicons/react'
 
-export interface JourneyStep {
-  when: string;
-  what: string;
-  icon: import('../components/icons').IconName;
-  final?: boolean;
-}
-
-export interface ReferStep {
-  num: string;
-  what: string;
-  sub: string;
-}
+export type PredictionSide = 'yes' | 'no'
 
 export interface FounderBenefit {
-  icon: import('../components/icons').IconName;
-  text: string;
+  icon: IconSvgElement
+  text: string
 }

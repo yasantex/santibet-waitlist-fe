@@ -1,11 +1,17 @@
 import { useEffect } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { LockIcon, SmartPhone01Icon } from '@hugeicons/core-free-icons'
 import type { PredictionSide } from '../../utils/types'
 import type { VerifiedNumber } from '../../redux/campaignSlice'
 import { trackEvent } from '../../utils/constants'
 import NumberSwitcher from './NumberSwitcher'
+import SelectionChoice from './SelectionChoice'
+import ErrorText from './ErrorText'
 import {
-  BACK_LINK_CLASS,
+  INPUT_CLASS,
   NG_PHONE_REGEX,
+  PILL_BUTTON_CLASS,
+  STEP_PANEL_CLASS,
   formatPhoneDisplay,
   primaryButtonClass,
 } from './utils'
@@ -72,17 +78,23 @@ export default function PhoneStep({
   }
 
   return (
-    <div className='px-7.5 pt-5 pb-6.5'>
-      <div className='mb-4 flex items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 py-3'>
-        <span className='shrink-0 rounded-lg bg-lime px-2.5 py-1.5 text-xs font-black text-lime-ink'>
-          {pickedSide.toUpperCase()}
+    <div className={STEP_PANEL_CLASS}>
+      <div className='mb-3 flex items-center justify-between border-b border-border pb-2.5'>
+        <span className='text-[11px] font-bold tracking-widest text-muted uppercase'>
+          Your Selection
         </span>
-        <span className='text-[12.5px] font-semibold text-ink'>
-          {showPhoneInput
-            ? 'Nice pick. One last step to lock it in.'
-            : 'Nice pick. Tap confirm to lock it in.'}
-        </span>
+        <button type='button' onClick={onBack} className={PILL_BUTTON_CLASS}>
+          Change
+        </button>
       </div>
+
+      <SelectionChoice side={pickedSide} />
+
+      <p className='mt-2.5 mb-3 text-center text-xs leading-snug text-muted'>
+        {showPhoneInput
+          ? 'Nice pick. Save your prediction & join the waitlist.'
+          : 'Nice pick. Tap confirm to lock it in.'}
+      </p>
 
       {returning && !enteringNumber && (
         <NumberSwitcher
@@ -99,7 +111,7 @@ export default function PhoneStep({
         <button
           type='button'
           onClick={onCancelAddNumber}
-          className='link-action mb-4 block text-left text-xs font-bold text-dark dark:text-lime'
+          className='link-action mb-3 block text-left text-xs font-semibold text-dark dark:text-lime'
         >
           ← Predict as {predictingAsLabel} instead
         </button>
@@ -107,29 +119,35 @@ export default function PhoneStep({
 
       {showPhoneInput && (
         <>
-          <div className='mb-2 text-xs font-bold text-muted'>
+          <label
+            htmlFor='prediction-phone'
+            className='mb-1.5 block text-xs font-semibold text-muted'
+          >
             {returning ? 'Mobile number to predict as' : 'Your mobile number'}
-          </div>
-          <div className='mb-1.5 flex gap-2'>
-            <div className='flex items-center rounded-xl border-[1.5px] border-border bg-surface-2 px-3 py-2 text-sm font-bold text-ink'>
-              +234
+          </label>
+          <div className='mb-2 flex gap-2'>
+            <div className='flex h-11 shrink-0 items-center gap-1.5 rounded-xl border-[1.5px] border-border bg-surface px-3 text-xs font-semibold whitespace-nowrap text-foreground'>
+              <HugeiconsIcon icon={SmartPhone01Icon} size={15} className='text-muted' />
+              NG +234
             </div>
             <input
+              id='prediction-phone'
               type='tel'
               inputMode='numeric'
+              autoComplete='tel-national'
               placeholder='801 234 5678'
-              aria-label='Mobile number'
               value={formatPhoneDisplay(phone)}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              className={`min-w-0 flex-1 rounded-xl border-[1.5px] bg-surface px-3.5 py-2 text-[15px] font-semibold text-ink placeholder:text-placeholder placeholder:font-normal ${
+              aria-invalid={showPhoneError}
+              className={`${INPUT_CLASS} ${
                 showPhoneError ? 'border-error' : 'border-border'
               }`}
             />
           </div>
           {showPhoneError && (
-            <div className='mb-2 text-[11px] font-bold text-error'>
+            <ErrorText className='mb-2'>
               Enter a valid Nigerian mobile number.
-            </div>
+            </ErrorText>
           )}
         </>
       )}
@@ -143,31 +161,29 @@ export default function PhoneStep({
         {submitting
           ? 'Submitting…'
           : showPhoneInput
-            ? 'Submit'
+            ? phone
+              ? 'Save Prediction'
+              : 'Enter your phone number'
             : 'Confirm prediction'}
       </button>
 
-      {errorMsg && (
-        <div className='mt-2.5 text-[14px] font-medium text-error'>
-          {errorMsg}
-        </div>
-      )}
+      {errorMsg && <ErrorText className='mt-2.5'>{errorMsg}</ErrorText>}
 
-      <div className='mt-3 text-center text-[11px] font-medium text-muted'>
+      <div className='mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-muted'>
+        <HugeiconsIcon icon={LockIcon} size={12} />
+        Free · One-time verification
+      </div>
+      <div className='mt-1.5 text-center text-[11px] text-muted'>
         By continuing, you agree to our{' '}
         <button
           type='button'
           onClick={onOpenRules}
-          className='link-action font-bold text-dark dark:text-lime'
+          className='link-action font-semibold text-dark dark:text-lime'
         >
           Waitlist &amp; Prediction Rules
         </button>
         .
       </div>
-
-      <button type='button' onClick={onBack} className={`mt-3 ${BACK_LINK_CLASS}`}>
-        ← Change selection
-      </button>
     </div>
   )
 }

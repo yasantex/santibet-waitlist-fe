@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Cancel01Icon } from '@hugeicons/core-free-icons'
 
 type ModalProps = {
   open: boolean
@@ -10,6 +12,10 @@ type ModalProps = {
   subtitle?: string
   children: React.ReactNode
   footer?: React.ReactNode
+  /** Pinned under the title, above the scrolling body (e.g. tabs). */
+  toolbar?: React.ReactNode
+  /** Tailwind max-width class for the dialog. */
+  maxWidth?: string
 }
 
 export default function Modal({
@@ -19,6 +25,8 @@ export default function Modal({
   subtitle,
   children,
   footer,
+  toolbar,
+  maxWidth = 'max-w-120',
 }: ModalProps) {
   useEffect(() => {
     if (!open) return
@@ -47,16 +55,18 @@ export default function Modal({
       aria-labelledby='modal-title'
     >
       <div
-        className='absolute inset-0 bg-dark/60 backdrop-blur-sm'
+        className='absolute inset-0 bg-[#000]/60 backdrop-blur-sm'
         onClick={onClose}
       />
 
-      <div className='relative flex max-h-[70vh] w-full max-w-150 flex-col overflow-hidden rounded-2xl border-2 border-dark bg-surface shadow-2xl dark:border-lime'>
-        <div className='flex items-start justify-between gap-4 border-b border-border px-6 pt-6 pb-4'>
+      <div
+        className={`animate-slide-up relative flex max-h-[80vh] w-full ${maxWidth} flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_20px_60px_rgb(0_0_0/0.45)]`}
+      >
+        <div className='flex items-start justify-between gap-4 border-b border-border px-5 py-4'>
           <div>
             <h3
               id='modal-title'
-              className='font-display text-xl font-black tracking-[-0.01em] text-ink'
+              className='font-display text-lg font-bold tracking-[-0.01em] text-foreground'
             >
               {title}
             </h3>
@@ -71,18 +81,20 @@ export default function Modal({
             type='button'
             onClick={onClose}
             aria-label='Close'
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-lg font-bold text-muted transition-colors hover:bg-surface-2 hover:text-ink active:bg-surface-hover'
+            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-surface-2 text-muted transition-colors hover:bg-border hover:text-foreground'
           >
-            ×
+            <HugeiconsIcon icon={Cancel01Icon} size={15} />
           </button>
         </div>
 
-        <div className='modal-scroll flex-1 overflow-y-auto px-6 py-5'>
+        {toolbar}
+
+        <div className='modal-scroll flex-1 overflow-y-auto px-5 py-4'>
           {children}
         </div>
 
         {footer && (
-          <div className='border-t border-border bg-surface px-6 py-5'>
+          <div className='border-t border-border bg-surface px-5 py-4'>
             {footer}
           </div>
         )}
