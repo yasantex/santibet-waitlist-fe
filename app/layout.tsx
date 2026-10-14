@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Outfit } from 'next/font/google'
+import { Poppins } from 'next/font/google'
 import { GoogleTagManager } from '@next/third-parties/google'
 import Script from 'next/script'
 import './globals.css'
@@ -7,9 +7,10 @@ import { AppProvider } from '@/src/provider/AppProvider'
 import ThemeToggle from '@/src/components/ThemeToggle'
 import Toaster from '@/src/components/Toaster'
 
-const outfit = Outfit({
-  variable: '--font-outfit',
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
 })
 
 export const metadata: Metadata = {
@@ -66,7 +67,7 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${outfit.variable} antialiased bg-background text-foreground`}
+        className={`${poppins.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         {/* GTM's no-JavaScript fallback; GoogleTagManager only injects the script. */}

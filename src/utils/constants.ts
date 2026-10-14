@@ -1,7 +1,15 @@
 import { sendGTMEvent } from '@next/third-parties/google'
 import { AxiosError } from 'axios'
 import type { Money } from '../types/campaign'
-import type { FounderBenefit, JourneyStep, ReferStep } from './types'
+import {
+  CheckmarkBadge01Icon,
+  GiftIcon,
+  PartyIcon,
+  Rocket01Icon,
+  Ticket01Icon,
+  Wallet01Icon,
+} from '@hugeicons/core-free-icons'
+import type { FounderBenefit } from './types'
 
 // ---------------------------------------------------------------------------
 // Contact
@@ -81,6 +89,8 @@ type AnalyticsEvent =
   | { event: 'referral_share_click'; cta_name: string; share_channel: 'whatsapp' | 'native' }
   | { event: 'rules_opened'; cta_name: string }
   | { event: 'founder_tier_opened'; tier: string }
+  // The "You're in" screen after a confirmed prediction. `new` = first-time signup.
+  | { event: 'thank_you_view'; user_type: 'new' | 'returning' }
 
 declare global {
   interface Window {
@@ -105,6 +115,9 @@ function trackMetaPixel(payload: AnalyticsEvent) {
         status: true,
         referred: payload.referred,
       })
+      break
+    case 'thank_you_view':
+      window.fbq('trackCustom', 'ThankYouView', { user_type: payload.user_type })
       break
   }
 }
@@ -143,42 +156,11 @@ export function errorInfo(error: unknown): ErrorInfo {
 // Page content
 // ---------------------------------------------------------------------------
 
-export const journeySteps: JourneyStep[] = [
-  { when: 'Today', what: 'Earn daily airtime rewards', icon: 'sunrise' },
-  { when: 'This week', what: 'Unlock weekly rewards', icon: 'coin' },
-  { when: 'Every prediction', what: 'Earn Founder Points', icon: 'target' },
-  {
-    when: 'Launch day',
-    what: 'Qualify for the ₦1,000,000 prize draw',
-    icon: 'trophy',
-    final: true,
-  },
-  { when: 'After launch', what: 'Keep your Founder perks', icon: 'crown' },
-]
-
-export const referSteps: ReferStep[] = [
-  {
-    num: '01',
-    what: 'Drop your link',
-    sub: "Your unique referral link is generated when you make your first prediction.",
-  },
-  {
-    num: '02',
-    what: 'They make a prediction',
-    sub: "They make their first YES or NO prediction, and the referral counts.",
-  },
-  {
-    num: '03',
-    what: 'You both earn points',
-    sub: '+5 Founder Points each, helping you climb the leaderboard.',
-  },
-]
-
 export const founderBenefits: FounderBenefit[] = [
-  { icon: 'badge', text: 'A Founder Badge that never expires' },
-  { icon: 'rocket', text: 'Skip the queue at public launch' },
-  { icon: 'gift', text: 'A welcome bonus stacked on top of the standard one' },
-  { icon: 'ticket', text: 'Free credits to make your first prediction with' },
-  { icon: 'wallet', text: 'A Founder-only deposit match when deposits open' },
-  { icon: 'confetti', text: 'First access to every launch-week drop' },
+  { icon: CheckmarkBadge01Icon, text: 'A Founder Badge that never expires' },
+  { icon: Rocket01Icon, text: 'Skip the queue at public launch' },
+  { icon: GiftIcon, text: 'A welcome bonus stacked on top of the standard one' },
+  { icon: Ticket01Icon, text: 'Free credits to make your first prediction with' },
+  { icon: Wallet01Icon, text: 'A Founder-only deposit match when deposits open' },
+  { icon: PartyIcon, text: 'First access to every launch-week drop' },
 ]

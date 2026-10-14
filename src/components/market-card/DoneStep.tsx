@@ -1,88 +1,54 @@
+import { HugeiconsIcon } from '@hugeicons/react'
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import type { PredictionSide } from '../../utils/types'
-import type { PredictionParticipant } from '../../types/campaign'
-import ShareReferral from './ShareReferral'
 import { BACK_LINK_CLASS } from './utils'
 
 interface DoneStepProps {
   pickedSide: PredictionSide | null
-  /** Founder details of the number the call went in for; null when we don't have them. */
-  founder: PredictionParticipant | null
   closesClock: string
+  onViewEntry: () => void
   onPredictAnother: () => void
 }
 
-function CheckIcon() {
-  return (
-    <svg
-      viewBox='0 0 24 24'
-      className='h-6 w-6'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth={2.5}
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    >
-      <path d='m4 12 6 6L20 6' />
-    </svg>
-  )
-}
-
-function FounderStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className='rounded-[10px] border border-border bg-paper px-4 py-3.5'>
-      <div className='mb-1 text-[14px] tracking-wide text-neutral-10 uppercase'>
-        {label}
-      </div>
-      <div className='text-[17px] font-bold text-success'>{value}</div>
-    </div>
-  )
-}
-
+/** What the card shows once the prediction is in and the thank-you screen is closed. */
 export default function DoneStep({
   pickedSide,
-  founder,
   closesClock,
+  onViewEntry,
   onPredictAnother,
 }: DoneStepProps) {
   return (
-    <div className='px-7.5 pt-6 pb-7.5 text-center'>
-      <div className='mx-auto mb-3.5 flex h-13 w-13 items-center justify-center rounded-full bg-lime text-lime-ink'>
-        <CheckIcon />
-      </div>
-      <div className='mb-1 font-display text-[19px] font-black text-ink'>
-        You&apos;re locked in!
-      </div>
-      <div className='mb-4.5 text-[13px] text-muted'>
-        Your {pickedSide?.toUpperCase()} prediction is saved. Come back
-        tomorrow for a new one.
+    <div className='animate-slide-up'>
+      <div className='flex items-center justify-center gap-2 rounded-xl border border-success/60 bg-success/10 px-3 py-3 text-center text-sm font-semibold text-success shadow-[0_0_16px_rgb(22_163_74/0.12)]'>
+        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className='shrink-0' />
+        Your {pickedSide?.toUpperCase()} prediction is locked. Come back for the next question.
       </div>
 
-      {founder && (
-        <div className='mb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left'>
-          <FounderStat
-            label='Founder Number'
-            value={`#${founder.participantNumber.toLocaleString()}`}
-          />
-          <FounderStat
-            label='Current Founder rank'
-            value={
-              founder.rank != null ? `#${founder.rank.toLocaleString()}` : '—'
-            }
-          />
+      <div className='mt-3 grid grid-cols-2 gap-2'>
+        <div className='rounded-xl border border-border bg-surface-2 px-3 py-2.5'>
+          <div className='text-[10px] font-semibold tracking-[0.06em] text-muted uppercase'>
+            Window closes in
+          </div>
+          <div className='text-lg font-extrabold text-foreground tabular-nums'>
+            {closesClock}
+          </div>
         </div>
-      )}
-
-      <div className='mb-4.5 inline-flex items-center gap-2.5 rounded-full border border-border bg-paper px-4.5 py-2.5 text-sm text-neutral-10'>
-        Today&apos;s window closes in{' '}
-        <b className='text-[15px] text-ink'>{closesClock}</b>
+        <button
+          type='button'
+          onClick={onViewEntry}
+          className='btn-lift rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-left hover:border-dark dark:hover:border-lime'
+        >
+          <div className='text-[10px] font-semibold tracking-[0.06em] text-muted uppercase'>
+            Your entry
+          </div>
+          <div className='text-sm font-bold text-dark dark:text-lime'>View &amp; share →</div>
+        </button>
       </div>
-
-      {founder && <ShareReferral referralCode={founder.referralCode} />}
 
       <button
         type='button'
         onClick={onPredictAnother}
-        className={`mt-4 ${BACK_LINK_CLASS}`}
+        className={`mt-3 ${BACK_LINK_CLASS}`}
       >
         Predicting for someone else on this device? Use another number
       </button>

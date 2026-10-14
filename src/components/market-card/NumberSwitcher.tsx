@@ -1,3 +1,5 @@
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Add01Icon, SmartPhone01Icon } from '@hugeicons/core-free-icons'
 import type { VerifiedNumber } from '../../redux/campaignSlice'
 import { maskPhone } from './utils'
 
@@ -22,29 +24,30 @@ export default function NumberSwitcher({
 }: NumberSwitcherProps) {
   const canSwitch = otherNumbers.length > 0
   return (
-    <div className='mb-4 rounded-xl border-[1.5px] border-border px-3.5 py-3'>
+    <div className='mb-3 rounded-xl border border-border bg-surface px-3 py-2.5'>
       <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1'>
-        <span className='text-[12.5px] font-semibold text-muted'>
+        <span className='flex items-center gap-1.5 text-xs font-medium text-muted'>
+          <HugeiconsIcon icon={SmartPhone01Icon} size={14} />
           Predicting as{' '}
-          <strong className='text-ink'>{predictingAsLabel}</strong>
+          <strong className='font-semibold text-foreground'>{predictingAsLabel}</strong>
         </span>
         <button
           type='button'
           onClick={canSwitch ? onToggle : onAddNumber}
-          className='link-action text-xs font-bold text-dark dark:text-lime'
+          className='link-action text-xs font-semibold text-dark dark:text-lime'
         >
           {open ? 'Close' : canSwitch ? 'Switch number' : 'Use another number'}
         </button>
       </div>
 
       {open && (
-        <div className='mt-3 flex flex-wrap gap-2 border-t border-dashed border-border pt-3'>
+        <div className='mt-2.5 flex flex-wrap gap-2 border-t border-dashed border-border pt-2.5'>
           {otherNumbers.map((n) => (
             <button
               key={n.phone}
               type='button'
               onClick={() => onSwitch(n.phone)}
-              className='btn-lift rounded-lg border-[1.5px] border-border bg-surface px-3 py-2 text-xs font-bold text-ink hover:border-dark dark:hover:border-lime'
+              className='btn-lift rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs font-semibold text-foreground hover:border-dark dark:hover:border-lime'
             >
               {maskPhone(n.phone)}
             </button>
@@ -52,9 +55,10 @@ export default function NumberSwitcher({
           <button
             type='button'
             onClick={onAddNumber}
-            className='btn-lift rounded-lg border-[1.5px] border-dashed border-border px-3 py-2 text-xs font-bold text-muted hover:border-dark hover:text-ink dark:hover:border-lime'
+            className='btn-lift flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted hover:border-dark hover:text-foreground dark:hover:border-lime'
           >
-            + Add a number
+            <HugeiconsIcon icon={Add01Icon} size={13} />
+            Add a number
           </button>
         </div>
       )}

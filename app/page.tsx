@@ -1,35 +1,43 @@
-import ContactUs from "@/src/components/ContactUs";
-import FAQ from "@/src/components/FAQ";
-import Footer from "@/src/components/Footer";
-import FounderProgram from "@/src/components/FounderProgram";
-import GrandPrize from "@/src/components/GrandPrize";
-import Header from "@/src/components/Header";
-import Hero from "@/src/components/Hero";
-import HowItWorks from "@/src/components/HowItWorks";
-import Leaderboard from "@/src/components/Leaderboard";
-import LiveActivityToasts from "@/src/components/LiveActivityToasts";
-import MarketSection from "@/src/components/MarketSection";
-import PrizesSection from "@/src/components/PrizesSection";
-import ProofSection from "@/src/components/ProofSection";
-import ReferFriend from "@/src/components/ReferFriend";
+import Footer from '@/src/components/Footer'
+import Header from '@/src/components/Header'
+import Hero from '@/src/components/Hero'
+import LaunchCountdown from '@/src/components/LaunchCountdown'
+import LiveActivityToasts from '@/src/components/LiveActivityToasts'
+import MarketCard from '@/src/components/MarketCard'
+import SideMenu from '@/src/components/SideMenu'
+import { PanelProvider } from '@/src/components/PanelContext'
+import PlayerCard from '@/src/components/PlayerCard'
+import QuickLeaderboardLink from '@/src/components/QuickLeaderboardLink'
+import Ticker from '@/src/components/Ticker'
 
 export default function Home() {
   return (
-    <>
+    <PanelProvider>
       <LiveActivityToasts />
-      <Header />
-      <Hero />
-      <HowItWorks />
-      <MarketSection />
-      <ProofSection />
-      <PrizesSection />
-      <GrandPrize />
-      <Leaderboard />
-      <FounderProgram />
-      <ReferFriend />
-      <FAQ />
-      <ContactUs />
-      <Footer />
-    </>
-  );
+      <SideMenu />
+
+      {/* App shell: header, ticker and footer stay put; only <main> scrolls. */}
+      <div className='flex h-dvh flex-col overflow-hidden'>
+        <Header />
+        <Ticker />
+
+        <main id={'main-scroll'} className='min-h-0 flex-1 overflow-y-auto'>
+          <div className='mx-auto grid min-h-full w-full max-w-300 grid-cols-1 content-center items-start gap-4 px-4 pt-4 pb-16 lg:grid-cols-[1fr_1.2fr] lg:gap-5 lg:py-6'>
+            <div className='flex flex-col gap-4'>
+              <LaunchCountdown />
+              <Hero />
+            </div>
+
+            <div className='flex flex-col gap-4'>
+              <MarketCard />
+              <QuickLeaderboardLink />
+              <PlayerCard />
+            </div>
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    </PanelProvider>
+  )
 }

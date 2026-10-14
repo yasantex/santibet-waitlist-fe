@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react'
 import { toast } from 'sonner'
-import { Icon, type IconName } from './icons'
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import { ChampionIcon, Rocket01Icon, StarIcon } from '@hugeicons/core-free-icons'
 import {
   useActiveCampaign,
   useCampaignActivityStream,
@@ -12,32 +13,32 @@ import type { ActivityToasts } from '../types/campaign'
 
 /** One sentence per kind: the player when it's a single event, the count when it's several. */
 function toastMessages({ joined, climbed, won }: ActivityToasts) {
-  const messages: { icon: IconName; text: string }[] = []
+  const messages: { icon: IconSvgElement; text: string }[] = []
 
   if (joined.count === 1 && joined.latest) {
-    messages.push({ icon: 'rocket', text: `${joined.latest} just joined the waitlist` })
+    messages.push({ icon: Rocket01Icon, text: `${joined.latest} just joined the waitlist` })
   } else if (joined.count > 0) {
     messages.push({
-      icon: 'rocket',
+      icon: Rocket01Icon,
       text: `${joined.count} ${joined.count === 1 ? 'person' : 'people'} just joined the waitlist`,
     })
   }
 
   if (climbed.count === 1 && climbed.latest && climbed.rank != null) {
-    messages.push({ icon: 'star', text: `${climbed.latest} just climbed to #${climbed.rank}` })
+    messages.push({ icon: StarIcon, text: `${climbed.latest} just climbed to #${climbed.rank}` })
   } else if (climbed.count > 0) {
     messages.push({
-      icon: 'star',
+      icon: StarIcon,
       text: `${climbed.count} ${climbed.count === 1 ? 'player' : 'players'} just broke into the top ten`,
     })
   }
 
   if (won.count === 1 && won.latest && won.prizeName) {
     const amount = won.amount ? ` (${formatMoney(won.amount)})` : ''
-    messages.push({ icon: 'trophy', text: `${won.latest} just won ${won.prizeName}${amount}` })
+    messages.push({ icon: ChampionIcon, text: `${won.latest} just won ${won.prizeName}${amount}` })
   } else if (won.count > 0) {
     messages.push({
-      icon: 'trophy',
+      icon: ChampionIcon,
       text: `${won.count} ${won.count === 1 ? 'winner was' : 'winners were'} just drawn`,
     })
   }
@@ -47,7 +48,7 @@ function toastMessages({ joined, climbed, won }: ActivityToasts) {
 
 function showToasts(toasts: ActivityToasts) {
   toastMessages(toasts).forEach(({ icon, text }) =>
-    toast(text, { icon: <Icon name={icon} className='h-4 w-4' /> }),
+    toast(text, { icon: <HugeiconsIcon icon={icon} size={16} /> }),
   )
 }
 
