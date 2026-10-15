@@ -30,11 +30,11 @@ export default function PickStep({
             type='button'
             onClick={() => onPick(side)}
             aria-pressed={pickedSide === side}
-            className='btn-lift flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-border bg-surface-2 px-3 py-3 text-foreground hover:border-dark aria-pressed:border-lime aria-pressed:bg-lime aria-pressed:text-lime-ink dark:hover:border-lime'
+            className='btn-lift flex min-h-14 lg:min-h-24 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-border bg-surface-2 px-3 py-3 text-foreground hover:border-dark aria-pressed:border-lime aria-pressed:bg-lime aria-pressed:text-lime-ink dark:hover:border-lime'
           >
-            <span className='text-base font-bold tracking-[0.05em] uppercase'>{side}</span>
+            <span className='text-base font-bold tracking-[0.05em] uppercase lg:text-xl'>{side}</span>
             {percent[side] != null && (
-              <span className='text-[11px] font-medium opacity-70'>
+              <span className='text-[11px] font-medium opacity-70 lg:text-xs'>
                 {percent[side]}% of predictions
               </span>
             )}

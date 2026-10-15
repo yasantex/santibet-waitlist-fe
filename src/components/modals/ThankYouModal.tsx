@@ -11,10 +11,10 @@ import {
 } from '@hugeicons/core-free-icons'
 import type { PredictionSide } from '../../utils/types'
 import type { PredictionParticipant } from '../../types/campaign'
-import ShareReferral from './ShareReferral'
-import { BACK_LINK_CLASS, primaryButtonClass } from './utils'
+import ShareReferral from '../market-card/ShareReferral'
+import { BACK_LINK_CLASS, primaryButtonClass } from '../market-card/utils'
 
-interface ThankYouProps {
+interface ThankYouModalProps {
   open: boolean
   pickedSide: PredictionSide | null
   /** Founder details of the number the call went in for; null when we don't have them. */
@@ -28,7 +28,7 @@ interface ThankYouProps {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className='rounded-xl border border-border bg-surface px-2 py-2.5 text-center'>
+    <div className='rounded-xl border border-border bg-surface-2 px-2 py-2.5 text-center'>
       <div className='truncate text-base font-extrabold text-success tabular-nums sm:text-lg'>
         {value}
       </div>
@@ -52,8 +52,8 @@ function setStepParam(on: boolean, mode: 'push' | 'replace') {
   window.history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', url)
 }
 
-/** Full-page "You're in" screen shown right after a prediction is locked. */
-export default function ThankYou({
+/** "You're in" modal shown right after a prediction is locked. */
+export default function ThankYouModal({
   open,
   pickedSide,
   founder,
@@ -62,7 +62,7 @@ export default function ThankYou({
   referralPoints,
   onClose,
   onPredictAnother,
-}: ThankYouProps) {
+}: ThankYouModalProps) {
   // A refreshed or shared ?step=thank-you link has no prediction behind it — drop the param.
   useEffect(() => {
     setStepParam(false, 'replace')
@@ -101,33 +101,39 @@ export default function ThankYou({
       role='dialog'
       aria-modal='true'
       aria-labelledby='thank-you-title'
-      className='fixed inset-x-0 top-22 bottom-(--footer-h) z-30 overflow-y-auto bg-background px-4 pt-6 pb-16'
+      className='fixed inset-0 z-999 flex items-center justify-center p-4'
     >
-      <div className='relative mx-auto flex max-w-90 flex-col items-center text-center'>
+      <div
+        aria-hidden='true'
+        onClick={onClose}
+        className='absolute inset-0 bg-[#000]/60 backdrop-blur-sm'
+      />
+
+      <div className='animate-slide-up modal-scroll relative flex max-h-[90dvh] w-full max-w-100 flex-col sm:max-w-140 sm:px-7 items-center overflow-y-auto rounded-2xl border border-border bg-surface px-5 pt-6 pb-5 text-center shadow-[0_20px_60px_rgb(0_0_0/0.45)]'>
         <button
           type='button'
           onClick={onClose}
           aria-label='Close'
-          className='absolute -top-2 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-muted transition-colors hover:text-foreground'
+          className='absolute top-3 right-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-surface-2 text-muted transition-colors hover:bg-border hover:text-foreground'
         >
           <HugeiconsIcon icon={Cancel01Icon} size={15} />
         </button>
 
-        <div className='animate-scale-in relative mt-6 mb-4 flex h-18 w-18 items-center justify-center rounded-full border-2 border-success bg-success/10 text-success shadow-[0_0_32px_rgb(22_163_74/0.3)]'>
+        <div className='animate-scale-in relative mt-2 mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-success bg-success/10 text-success shadow-[0_0_32px_rgb(22_163_74/0.3)]'>
           <span
             aria-hidden='true'
             className='animate-ring-pulse absolute -inset-2 rounded-full border-2 border-success/25'
           />
-          <HugeiconsIcon icon={Tick02Icon} size={34} strokeWidth={2.5} />
+          <HugeiconsIcon icon={Tick02Icon} size={30} strokeWidth={2.5} />
         </div>
 
-        <h1
+        <h2
           id='thank-you-title'
           className='animate-gradient-text mb-1.5 bg-linear-135 from-dark via-success to-dark text-2xl font-extrabold tracking-[-0.02em] dark:from-lime dark:via-success dark:to-lime'
         >
           You&apos;re in. Prediction locked.
-        </h1>
-        <p className='mb-5 max-w-75 text-sm text-muted'>
+        </h2>
+        <p className='mb-5 max-w-75 text-sm text-muted sm:max-w-110'>
           Your {pickedSide?.toUpperCase()} prediction is saved and you&apos;re on the
           SantiBet waitlist. Come back for the next question.
         </p>
@@ -151,7 +157,7 @@ export default function ThankYou({
         </div>
 
         {founder && (
-          <div className='relative mb-4 w-full overflow-hidden rounded-2xl border border-lime/40 bg-surface p-3.5 text-left shadow-[0_0_24px_rgb(191_250_0/0.08)]'>
+          <div className='relative mb-4 w-full overflow-hidden rounded-2xl border border-lime/40 bg-surface-2 p-3.5 text-left shadow-[0_0_24px_rgb(191_250_0/0.08)]'>
             <div className='mb-2.5 flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-dark uppercase dark:text-lime'>
               <HugeiconsIcon icon={Share08Icon} size={14} />
               Share &amp; Earn
@@ -161,7 +167,7 @@ export default function ThankYou({
           </div>
         )}
 
-        <div className='mb-5 w-full rounded-2xl border border-border bg-surface p-3.5 text-left'>
+        <div className='mb-5 w-full rounded-2xl border border-border bg-surface-2 p-3.5 text-left'>
           <div className='mb-1.5 flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-dark uppercase dark:text-lime'>
             <HugeiconsIcon icon={SparklesIcon} size={14} />
             Rewards
