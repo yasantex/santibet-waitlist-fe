@@ -32,7 +32,7 @@ import PickStep from './market-card/PickStep'
 import PhoneStep from './market-card/PhoneStep'
 import CodeStep from './market-card/CodeStep'
 import DoneStep from './market-card/DoneStep'
-import ThankYou from './market-card/ThankYou'
+import ThankYouModal from './modals/ThankYouModal'
 import {
   CODE_LENGTH,
   RESEND_COOLDOWN_SECONDS,
@@ -429,7 +429,7 @@ export default function MarketCard() {
   return (
     <div
       id='market'
-      className='relative scroll-mt-28 overflow-hidden rounded-[20px] border border-border bg-surface p-4 shadow-[0_8px_32px_rgb(0_0_0/0.08)] sm:p-5 dark:shadow-[0_8px_32px_rgb(0_0_0/0.4)]'
+      className='relative scroll-mt-28 overflow-hidden rounded-[20px] border border-border bg-surface p-4 shadow-[0_8px_32px_rgb(0_0_0/0.08)] sm:p-5 lg:flex lg:flex-1 lg:flex-col lg:p-6 dark:shadow-[0_8px_32px_rgb(0_0_0/0.4)]'
     >
       <span
         aria-hidden='true'
@@ -465,11 +465,11 @@ export default function MarketCard() {
             </span>
           </div>
 
-          <h2 className='mb-4 text-[17px] leading-snug font-semibold tracking-[-0.01em] text-foreground sm:text-lg'>
+          <h2 className='mb-4 text-[17px] leading-snug font-semibold tracking-[-0.01em] text-foreground sm:text-lg lg:mb-6 lg:text-2xl'>
             {todayQuestion.text}
           </h2>
 
-          <div className='mb-3.5'>
+          <div className='mb-3.5 lg:mb-6'>
             {stage === 'pick' && (
               <PickStep
                 yesPercent={openDayStats?.yesPercent ?? null}
@@ -560,7 +560,8 @@ export default function MarketCard() {
             )}
           </div>
 
-          <div className='flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted'>
+          {/* mt-auto pins this row to the bottom when the card stretches on desktop. */}
+          <div className='flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted lg:mt-auto lg:pt-4 lg:text-sm'>
             <span>
               <strong className='font-semibold text-foreground'>{predictionCount}</strong>{' '}
               predictions
@@ -583,7 +584,7 @@ export default function MarketCard() {
         </>
       )}
 
-      <ThankYou
+      <ThankYouModal
         open={thankYouOpen && stage === 'done'}
         pickedSide={pickedSide}
         founder={doneFounder}
