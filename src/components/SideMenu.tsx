@@ -24,7 +24,7 @@ export default function SideMenu() {
         aria-modal='true'
         aria-label='Menu'
         inert={!menuOpen}
-        className={`fixed top-0 right-0 z-100 flex h-dvh w-full max-w-90 flex-col overflow-y-auto border-l border-border bg-surface transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed top-0 right-0 z-100 flex h-dvh w-full max-w-90 flex-col overflow-y-auto *:shrink-0 border-l border-border bg-surface transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           menuOpen
             ? 'translate-x-0 shadow-[-10px_0_40px_rgb(0_0_0/0.35)]'
             : 'translate-x-full'
