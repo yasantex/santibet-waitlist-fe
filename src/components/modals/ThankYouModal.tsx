@@ -109,7 +109,8 @@ export default function ThankYouModal({
         className='absolute inset-0 bg-[#000]/60 backdrop-blur-sm'
       />
 
-      <div className='animate-slide-up modal-scroll relative flex max-h-[90dvh] w-full max-w-100 flex-col sm:max-w-140 sm:px-7 items-center overflow-y-auto rounded-2xl border border-border bg-surface px-5 pt-6 pb-5 text-center shadow-[0_20px_60px_rgb(0_0_0/0.45)]'>
+      {/* *:shrink-0 keeps sections at full height so a short screen scrolls instead of clipping them. */}
+      <div className='animate-slide-up modal-scroll relative flex max-h-[90dvh] w-full max-w-100 flex-col *:shrink-0 sm:max-w-140 sm:px-7 items-center overflow-y-auto rounded-2xl border border-border bg-surface px-5 pt-6 pb-5 text-center shadow-[0_20px_60px_rgb(0_0_0/0.45)]'>
         <button
           type='button'
           onClick={onClose}
@@ -157,7 +158,7 @@ export default function ThankYouModal({
         </div>
 
         {founder && (
-          <div className='relative mb-4 w-full overflow-hidden rounded-2xl border border-lime/40 bg-surface-2 p-3.5 text-left shadow-[0_0_24px_rgb(191_250_0/0.08)]'>
+          <div className='relative mb-4 w-full rounded-2xl border border-lime/40 bg-surface-2 p-3.5 text-left shadow-[0_0_24px_rgb(191_250_0/0.08)]'>
             <div className='mb-2.5 flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-dark uppercase dark:text-lime'>
               <HugeiconsIcon icon={Share08Icon} size={14} />
               Share &amp; Earn
