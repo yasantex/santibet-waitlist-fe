@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowDown01Icon, Mail01Icon } from '@hugeicons/core-free-icons'
 import Modal from './Modal'
+import Markdown from '../Markdown'
 import {
   PRIVACY_SECTION_TITLE,
   RulesSections,
@@ -11,17 +12,43 @@ import {
 } from './WaitlistRulesModal'
 import { SOCIAL_ICON } from '../socialIcons'
 import { SUPPORT_EMAIL, socialLinks, trackEvent } from '../../utils/constants'
+import {
+  useActiveCampaign,
+  useContentPage,
+  useContentPages,
+} from '../../hooks/useCampaign'
 
-export type InfoTab = 'privacy' | 'terms' | 'faq' | 'contact'
+/** A page slug: one of the built-in pages below, or any page the API publishes. */
+export type InfoTab = string
 
-export const INFO_TABS: { key: InfoTab; label: string }[] = [
+type BuiltInTab = 'privacy' | 'terms' | 'faq' | 'contact'
+
+// Built-in content, shown for any of these the API hasn't published (all of them, for now).
+const BUILT_IN_TABS: { key: BuiltInTab; label: string }[] = [
   { key: 'privacy', label: 'Privacy' },
   { key: 'terms', label: 'Terms' },
   { key: 'faq', label: 'FAQ' },
   { key: 'contact', label: 'Contact' },
 ]
 
-const TITLES: Record<InfoTab, string> = {
+function isBuiltIn(tab: InfoTab): tab is BuiltInTab {
+  return BUILT_IN_TABS.some((t) => t.key === tab)
+}
+
+/**
+ * The footer's pages: the built-in four, then any other page the API publishes for this
+ * campaign — so new pages appear without a code change.
+ */
+export function useInfoTabs(): { key: InfoTab; label: string }[] {
+  const { activeCampaign } = useActiveCampaign()
+  const { data } = useContentPages(activeCampaign?.slug)
+  const extra = (data?.data ?? [])
+    .filter((p) => !isBuiltIn(p.slug))
+    .map((p) => ({ key: p.slug, label: p.title }))
+  return [...BUILT_IN_TABS, ...extra]
+}
+
+const TITLES: Record<BuiltInTab, string> = {
   privacy: 'Privacy Policy',
   terms: 'Waitlist & Prediction Rules',
   faq: 'Frequently Asked Questions',
@@ -30,9 +57,7 @@ const TITLES: Record<InfoTab, string> = {
 
 type Faq = { id: string; q: string; a: React.ReactNode }
 
-function FaqList({ onOpenTerms }: { onOpenTerms: () => void }) {
-  const [openId, setOpenId] = useState<string | null>(null)
-
+function BuiltInFaq({ onOpenTerms }: { onOpenTerms: () => void }) {
   const faqs: Faq[] = [
     {
       id: 'free',
@@ -73,6 +98,30 @@ function FaqList({ onOpenTerms }: { onOpenTerms: () => void }) {
       a: 'Share your unique referral link. When a referred friend joins and makes their first prediction, both of you can earn Founder Points and unlock additional referral rewards.',
     },
   ]
+  return <FaqAccordion faqs={faqs} />
+}
+
+/** An FAQ page body: one `##` heading per question, its answer below it. */
+function MarkdownFaq({ body }: { body: string }) {
+  const [intro, ...sections] = body.split(/^## /m)
+  const faqs: Faq[] = sections.map((section, i) => {
+    const [question, ...answer] = section.split('\n')
+    return {
+      id: `q${i + 1}`,
+      q: question.trim(),
+      a: <Markdown>{answer.join('\n').trim()}</Markdown>,
+    }
+  })
+  return (
+    <div className='flex flex-col gap-4'>
+      {intro.trim() && <Markdown>{intro.trim()}</Markdown>}
+      <FaqAccordion faqs={faqs} />
+    </div>
+  )
+}
+
+function FaqAccordion({ faqs }: { faqs: Faq[] }) {
+  const [openId, setOpenId] = useState<string | null>(null)
 
   function toggle(id: string) {
     const opening = openId !== id
@@ -118,7 +167,7 @@ function FaqList({ onOpenTerms }: { onOpenTerms: () => void }) {
               }`}
             >
               <div className='overflow-hidden'>
-                <p className='px-3.5 pb-3.5 text-sm leading-relaxed text-muted'>{faq.a}</p>
+                <div className='px-3.5 pb-3.5 text-sm leading-relaxed text-muted'>{faq.a}</div>
               </div>
             </div>
           </div>
@@ -179,7 +228,19 @@ function Contact() {
   )
 }
 
-/** Privacy / Terms / FAQ / Contact, opened from the footer links. */
+function formatUpdated(iso: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(iso))
+}
+
+/**
+ * Privacy / Terms / FAQ / Contact and any other published page, opened from the footer.
+ * A page the API publishes wins; otherwise the built-in version shows (a 404 PAGE_NOT_FOUND
+ * just means nothing is published yet).
+ */
 export default function InfoModal({
   tab,
   onTabChange,
@@ -190,6 +251,11 @@ export default function InfoModal({
   onTabChange: (tab: InfoTab) => void
   onClose: () => void
 }) {
+  const { activeCampaign } = useActiveCampaign()
+  const tabs = useInfoTabs()
+  const { data: page, isLoading, isError } = useContentPage(tab, activeCampaign?.slug)
+  const showPublished = Boolean(page) && !isError
+  const builtIn = tab && isBuiltIn(tab) ? tab : null
   const sections = useRulesSections()
   const privacy = sections.filter((s) => s.title === PRIVACY_SECTION_TITLE)
   const terms = sections.filter((s) => s.title !== PRIVACY_SECTION_TITLE)
@@ -198,14 +264,20 @@ export default function InfoModal({
     <Modal
       open={tab != null}
       onClose={onClose}
-      title={tab ? TITLES[tab] : ''}
+      title={
+        showPublished && page
+          ? page.title
+          : builtIn
+            ? TITLES[builtIn]
+            : (tabs.find((t) => t.key === tab)?.label ?? '')
+      }
       toolbar={
         <div
           role='tablist'
           aria-label='Information'
           className='no-scrollbar flex gap-4 overflow-x-auto border-b border-border px-5'
         >
-          {INFO_TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.key}
               type='button'
@@ -224,7 +296,22 @@ export default function InfoModal({
         </div>
       }
     >
-      {tab === 'privacy' && (
+      {showPublished && page ? (
+        <div className='flex flex-col gap-4'>
+          {page.slug === 'faq' ? <MarkdownFaq body={page.body} /> : <Markdown>{page.body}</Markdown>}
+          <p className='border-t border-border pt-3 text-xs text-neutral-10'>
+            Last updated {formatUpdated(page.updatedAt)}
+          </p>
+        </div>
+      ) : isLoading ? (
+        <p className='py-6 text-center text-sm text-muted'>Loading…</p>
+      ) : !builtIn ? (
+        <p className='py-6 text-center text-sm text-muted'>
+          This page isn&apos;t available right now.
+        </p>
+      ) : null}
+
+      {!showPublished && !isLoading && builtIn === 'privacy' && (
         <div className='flex flex-col gap-5'>
           <p className='text-sm leading-6 text-muted'>
             At SantiBet we collect only what we need to run the waitlist, verify your
@@ -244,9 +331,13 @@ export default function InfoModal({
           </p>
         </div>
       )}
-      {tab === 'terms' && <RulesSections sections={terms} />}
-      {tab === 'faq' && <FaqList onOpenTerms={() => onTabChange('terms')} />}
-      {tab === 'contact' && <Contact />}
+      {!showPublished && !isLoading && builtIn === 'terms' && (
+        <RulesSections sections={terms} />
+      )}
+      {!showPublished && !isLoading && builtIn === 'faq' && (
+        <BuiltInFaq onOpenTerms={() => onTabChange('terms')} />
+      )}
+      {!showPublished && !isLoading && builtIn === 'contact' && <Contact />}
     </Modal>
   )
 }

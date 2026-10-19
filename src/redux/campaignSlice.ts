@@ -84,6 +84,12 @@ const campaignSlice = createSlice({
       state.currentPhone = entry.phone
       state.standing = entry.standing
     },
+    /** An email was confirmed: there's no number yet, so its standing and key stand alone. */
+    emailVerified: (state, action: PayloadAction<ParticipantStanding>) => {
+      state.standing = action.payload
+      state.currentPhone = null
+      if (action.payload.deviceToken) state.deviceToken = action.payload.deviceToken
+    },
     clearCampaignAuth: () => initialState,
   },
 })
@@ -97,7 +103,7 @@ export const selectDeviceTokens = (state: RootState) =>
     .filter((t, i, all): t is string => Boolean(t) && all.indexOf(t) === i)
     .slice(0, MAX_DEVICE_NUMBERS)
 
-/** True once this device has verified any number (web only ever learns this from a standing). */
+/** True once this device has verified a number or email (web only learns this from a standing). */
 export const selectHasVerifiedDevice = (state: RootState) =>
   state.campaign.numbers.length > 0 ||
   Boolean(state.campaign.deviceToken) ||
@@ -106,6 +112,7 @@ export const selectHasVerifiedDevice = (state: RootState) =>
 export const {
   setStanding,
   numberVerified,
+  emailVerified,
   numberProven,
   switchNumber,
   clearCampaignAuth,

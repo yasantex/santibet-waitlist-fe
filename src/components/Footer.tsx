@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import InfoModal, { INFO_TABS, type InfoTab } from './modals/InfoModal'
+import InfoModal, { useInfoTabs, type InfoTab } from './modals/InfoModal'
 import { SOCIAL_ICON } from './socialIcons'
 import { socialLinks, trackEvent } from '../utils/constants'
 
@@ -11,6 +11,7 @@ const FOOTER_SOCIALS = socialLinks.filter((s) => s.name !== 'linkedin')
 
 export default function Footer() {
   const [infoTab, setInfoTab] = useState<InfoTab | null>(null)
+  const infoTabs = useInfoTabs()
   const year = new Date().getFullYear()
   const ref = useRef<HTMLElement>(null)
 
@@ -38,50 +39,56 @@ export default function Footer() {
   return (
     <footer
       ref={ref}
-      className='relative z-40 shrink-0 border-t border-border bg-paper px-4 py-3 text-center sm:py-4'
+      className='relative z-40 shrink-0 border-t border-border bg-paper px-4 py-3 sm:py-4'
     >
-      <div className='flex flex-wrap items-center justify-center gap-4'>
-        <div className='flex items-center gap-4'>
-          {FOOTER_SOCIALS.map((s) => (
-            <a
-              key={s.name}
-              href={s.href}
-              target='_blank'
-              rel='noreferrer'
-              aria-label={`SantiBet on ${s.label}`}
-              onClick={() =>
-                trackEvent({
-                  event: 'social_link_click',
-                  social_platform: s.name,
-                  cta_name: 'footer_social',
-                })
-              }
-              className='text-muted transition-[color,transform] hover:-translate-y-px hover:text-dark dark:hover:text-lime'
-            >
-              <HugeiconsIcon icon={SOCIAL_ICON[s.name]} size={24} />
-            </a>
-          ))}
+      {/* One row on desktop: legal left, socials centre, links right. Stacks on mobile. */}
+      <div className='mx-auto flex max-w-300 flex-col items-center gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6'>
+        <div className='order-3 text-xs text-neutral-10 lg:order-none lg:justify-self-start'>
+          © {year} Awa Lawa Limited · Santibet · Early Access
         </div>
-        <span className='rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-muted'>
-          18+ · Must be 18 or older
-        </span>
-      </div>
 
-      <nav aria-label='Information' className='mt-3 flex flex-wrap justify-center gap-6'>
-        {INFO_TABS.map((t) => (
-          <button
-            key={t.key}
-            type='button'
-            onClick={() => openTab(t.key)}
-            className='cursor-pointer text-sm text-muted transition-colors hover:text-dark dark:hover:text-lime'
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+        <div className='flex flex-wrap items-center justify-center gap-4'>
+          <div className='flex items-center gap-4'>
+            {FOOTER_SOCIALS.map((s) => (
+              <a
+                key={s.name}
+                href={s.href}
+                target='_blank'
+                rel='noreferrer'
+                aria-label={`SantiBet on ${s.label}`}
+                onClick={() =>
+                  trackEvent({
+                    event: 'social_link_click',
+                    social_platform: s.name,
+                    cta_name: 'footer_social',
+                  })
+                }
+                className='text-muted transition-[color,transform] hover:-translate-y-px hover:text-dark dark:hover:text-lime'
+              >
+                <HugeiconsIcon icon={SOCIAL_ICON[s.name]} size={18} />
+              </a>
+            ))}
+          </div>
+          <span className='rounded-full border border-border bg-surface px-3 py-1 text-[11px] font-semibold text-muted'>
+            18+ · Play Responsibly
+          </span>
+        </div>
 
-      <div className='mt-2 text-sm text-neutral-10'>
-        © {year} Awa Lawa Limited · Santibet · Early Access
+        <nav
+          aria-label='Information'
+          className='flex flex-wrap justify-center gap-5 lg:justify-self-end'
+        >
+          {infoTabs.map((t) => (
+            <button
+              key={t.key}
+              type='button'
+              onClick={() => openTab(t.key)}
+              className='cursor-pointer text-xs text-muted transition-colors hover:text-dark dark:hover:text-lime'
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       <InfoModal tab={infoTab} onTabChange={openTab} onClose={() => setInfoTab(null)} />

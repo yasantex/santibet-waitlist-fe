@@ -1,18 +1,15 @@
-import { useEffect } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { LockIcon, SmartPhone01Icon } from '@hugeicons/core-free-icons'
+import { LockIcon } from '@hugeicons/core-free-icons'
 import type { PredictionSide } from '../../utils/types'
 import type { VerifiedNumber } from '../../redux/campaignSlice'
-import { trackEvent } from '../../utils/constants'
 import NumberSwitcher from './NumberSwitcher'
+import PhoneField from './PhoneField'
 import SelectionChoice from './SelectionChoice'
 import ErrorText from './ErrorText'
 import {
-  INPUT_CLASS,
   NG_PHONE_REGEX,
   PILL_BUTTON_CLASS,
   STEP_PANEL_CLASS,
-  formatPhoneDisplay,
   primaryButtonClass,
 } from './utils'
 
@@ -57,25 +54,7 @@ export default function PhoneStep({
 }: PhoneStepProps) {
   const returning = predictingAsLabel !== null
   const showPhoneInput = !returning || enteringNumber
-  const isValidPhone = NG_PHONE_REGEX.test(phone)
-  const showPhoneError = phone.length === 10 && !isValidPhone
-  const canSubmit = showPhoneInput ? isValidPhone : true
-
-  // Fires each time the "Enter a valid Nigerian mobile number" message appears.
-  useEffect(() => {
-    if (showPhoneError) {
-      trackEvent({
-        event: 'form_validation_error',
-        form_name: 'waitlist',
-        form_step: 'phone',
-        error_type: 'invalid_phone',
-      })
-    }
-  }, [showPhoneError])
-
-  function handlePhoneChange(raw: string) {
-    onPhoneChange(raw.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10))
-  }
+  const canSubmit = showPhoneInput ? NG_PHONE_REGEX.test(phone) : true
 
   return (
     <div className={STEP_PANEL_CLASS}>
@@ -118,38 +97,14 @@ export default function PhoneStep({
       )}
 
       {showPhoneInput && (
-        <>
-          <label
-            htmlFor='prediction-phone'
-            className='mb-1.5 block text-xs font-semibold text-muted'
-          >
-            {returning ? 'Mobile number to predict as' : 'Your mobile number'}
-          </label>
-          <div className='mb-2 flex gap-2'>
-            <div className='flex h-11 shrink-0 items-center gap-1.5 rounded-xl border-[1.5px] border-border bg-surface px-3 text-xs font-semibold whitespace-nowrap text-foreground'>
-              <HugeiconsIcon icon={SmartPhone01Icon} size={15} className='text-muted' />
-              NG +234
-            </div>
-            <input
-              id='prediction-phone'
-              type='tel'
-              inputMode='numeric'
-              autoComplete='tel-national'
-              placeholder='801 234 5678'
-              value={formatPhoneDisplay(phone)}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              aria-invalid={showPhoneError}
-              className={`${INPUT_CLASS} ${
-                showPhoneError ? 'border-error' : 'border-border'
-              }`}
-            />
-          </div>
-          {showPhoneError && (
-            <ErrorText className='mb-2'>
-              Enter a valid Nigerian mobile number.
-            </ErrorText>
-          )}
-        </>
+        <PhoneField
+          id='prediction-phone'
+          label={returning ? 'Mobile number to predict as' : 'Your mobile number'}
+          value={phone}
+          onChange={onPhoneChange}
+          formStep='phone'
+          onEnter={canSubmit && !submitting ? onSubmit : undefined}
+        />
       )}
 
       <button

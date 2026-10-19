@@ -6,6 +6,7 @@ import LiveActivityToasts from '@/src/components/LiveActivityToasts'
 import MarketCard from '@/src/components/MarketCard'
 import SideMenu from '@/src/components/SideMenu'
 import { PanelProvider } from '@/src/components/PanelContext'
+import { WaitlistProvider } from '@/src/components/WaitlistContext'
 import PlayerCard from '@/src/components/PlayerCard'
 import QuickLeaderboardLink from '@/src/components/QuickLeaderboardLink'
 import Ticker from '@/src/components/Ticker'
@@ -13,6 +14,7 @@ import Ticker from '@/src/components/Ticker'
 export default function Home() {
   return (
     <PanelProvider>
+      <WaitlistProvider>
       <LiveActivityToasts />
       <SideMenu />
 
@@ -22,8 +24,9 @@ export default function Home() {
 
         <main id={'main-scroll'} className='min-h-0 flex-1 overflow-y-auto'>
           <div className='mx-auto grid min-h-full w-full max-w-300 grid-cols-1 content-center items-start gap-4 lg:items-stretch px-4 pt-4 pb-16 lg:grid-cols-[1fr_1.2fr] lg:gap-5 lg:py-6'>
-            {/* Stretches to the question column's height on desktop; Hero fills the rest. */}
-            <div className='flex flex-col gap-4'>
+            {/* Stretches to the question column's height on desktop; countdown and Hero split it.
+                lg:pb-10 leaves 40px spare, so each comes out 20px shorter. */}
+            <div className='flex flex-col gap-4 lg:pb-10'>
               <LaunchCountdown />
               <Hero />
             </div>
@@ -39,6 +42,7 @@ export default function Home() {
 
         <Footer />
       </div>
+      </WaitlistProvider>
     </PanelProvider>
   )
 }

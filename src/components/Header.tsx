@@ -5,10 +5,12 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon, Menu01Icon } from '@hugeicons/core-free-icons'
 import { usePanel } from './PanelContext'
 import { trackEvent } from '../utils/constants'
-import { focusQuestionCard, scrollMainToTop } from '../utils/page'
+import { scrollMainToTop } from '../utils/page'
+import { useOpenWaitlist } from './WaitlistContext'
 
 export default function Header() {
   const { menuOpen, toggleMenu, closeMenu } = usePanel()
+  const openWaitlist = useOpenWaitlist()
 
   return (
     <header className='relative z-50 h-14 shrink-0 border-b border-border bg-paper'>
@@ -37,7 +39,7 @@ export default function Header() {
             type='button'
             onClick={() => {
               closeMenu()
-              focusQuestionCard()
+              openWaitlist('cta')
               trackEvent({ event: 'cta_click', cta_name: 'header_join_waitlist' })
             }}
             className='btn-lift h-9 shrink-0 md:block hidden rounded-full bg-lime px-3.5 text-[11px] font-bold tracking-[0.05em] text-lime-ink uppercase shadow-[0_0_12px_rgb(191_250_0/0.35)] hover:bg-[#cfff3d] sm:px-4 sm:text-xs'

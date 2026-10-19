@@ -23,6 +23,10 @@ export interface Campaign {
   daysUntilStart: number | null
   daysRemaining: number | null
   participantCount: number
+  /** True (the default): predicting is the only way in, so there's no join modal. */
+  joinRequiresPrediction?: boolean
+  /** The join modal offers email as well as phone. */
+  allowEmailJoin?: boolean
 }
 
 export interface CampaignStats {
@@ -176,11 +180,37 @@ export interface ParticipantStanding {
   joinedAt: string
   referrals: ReferralStanding
   deviceToken?: string
+  /** Verified in this campaign; false means a code is still owed here (from /me). */
+  verified?: boolean
+  /** False for an email joiner who hasn't given a number yet — ask with their first prediction. */
+  hasPhone?: boolean
 }
 
 export interface SendVerificationResult {
   destination: string
   participantNumber: number
+}
+
+/** POST /join. AWAITING_CODE: a code went to `destination`. JOINED: already verified here. */
+export interface JoinResult {
+  status: 'AWAITING_CODE' | 'JOINED'
+  alreadyJoined: boolean
+  destination?: string
+  participantNumber: number
+  referralCode: string
+  rank: number | null
+}
+
+/** One entry of GET /api/pages. */
+export interface ContentPageSummary {
+  slug: string
+  title: string
+  updatedAt: string
+}
+
+/** GET /api/pages/:slug — `body` is Markdown. */
+export interface ContentPage extends ContentPageSummary {
+  body: string
 }
 
 export interface PredictionResult {

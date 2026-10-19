@@ -20,6 +20,9 @@ import type {
   Campaign,
   CampaignRules,
   CampaignStats,
+  ContentPage,
+  ContentPageSummary,
+  JoinResult,
   LeaderboardEntry,
   ParticipantStanding,
   PredictionResult,
@@ -32,7 +35,16 @@ import type {
 const CAMPAIGNS_BASE = '/api/campaigns'
 const ACTIVE_CAMPAIGN_SLUG = process.env.NEXT_PUBLIC_CAMPAIGN_SLUG
 
-/** Reads the first AWAITING_CODE-friendly message off an axios error from the campaigns API. */
+/** The API's machine-readable error code (e.g. PAGE_NOT_FOUND), if it sent one. */
+export function getApiErrorCode(error: unknown): string | null {
+  if (error instanceof AxiosError) {
+    const code = (error.response?.data as { code?: unknown } | undefined)?.code
+    if (typeof code === 'string') return code
+  }
+  return null
+}
+
+/** Reads the human-readable message off an axios error from the campaigns API. */
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
     const data = error.response?.data as { message?: string } | undefined
@@ -281,6 +293,22 @@ function useInvalidateCampaign(slug: string | null | undefined) {
   }
 }
 
+/**
+ * Joins the campaign with a phone number or an email. AWAITING_CODE means a code went out to
+ * confirm with useConfirmVerification; JOINED means they're already verified here. Calling it
+ * again with the same body resends the code (429 OTP_COOLDOWN until `retryAfterSeconds`).
+ */
+export function useJoinCampaign(slug: string | null | undefined) {
+  return useSantibetMutation<
+    JoinResult,
+    { phone?: string; email?: string; referralCode?: string }
+  >({
+    path: `${CAMPAIGNS_BASE}/${slug}/join`,
+    method: 'POST',
+  })
+}
+
+/** Resends the code for a prediction that's waiting on one. */
 export function useSendVerification(slug: string | null | undefined) {
   return useSantibetMutation<SendVerificationResult, { phone: string }>({
     path: `${CAMPAIGNS_BASE}/${slug}/verifications`,
@@ -299,11 +327,12 @@ export function useSendEmailVerification(slug: string | null | undefined) {
   })
 }
 
+/** Confirms a code with the same field it was requested for (phone or email). */
 export function useConfirmVerification(slug: string | null | undefined) {
   const invalidate = useInvalidateCampaign(slug)
   return useSantibetMutation<
     ParticipantStanding,
-    { phone: string; code: string }
+    { phone?: string; email?: string; code: string }
   >({
     path: `${CAMPAIGNS_BASE}/${slug}/verifications/confirm`,
     method: 'POST',
@@ -362,5 +391,28 @@ export function useClaimWinning() {
         })
       },
     },
+  })
+}
+
+/** Published content pages (contact, privacy, terms, FAQ…) for the campaign's footer. */
+export function useContentPages(campaignSlug: string | null | undefined) {
+  return useSantibetQuery<{ data: ContentPageSummary[] }>({
+    path: '/api/pages',
+    enabled: Boolean(campaignSlug),
+    params: { campaign: campaignSlug },
+    queryOptions: { retry: false, staleTime: 60_000 },
+  })
+}
+
+/** One content page. A 404 PAGE_NOT_FOUND means nothing is published under that slug. */
+export function useContentPage(
+  pageSlug: string | null | undefined,
+  campaignSlug: string | null | undefined,
+) {
+  return useSantibetQuery<ContentPage>({
+    path: `/api/pages/${pageSlug}`,
+    enabled: Boolean(pageSlug) && Boolean(campaignSlug),
+    params: { campaign: campaignSlug },
+    queryOptions: { retry: false, staleTime: 60_000 },
   })
 }
