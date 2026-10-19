@@ -14,7 +14,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'SantiBet — Predict. Win. Repeat.',
+  title: 'Santibet - Join the Waitlist',
   description:
     'Every day until launch, one YES or NO bet decides your rank, your rewards, and your shot at ₦1,000,000.',
 }

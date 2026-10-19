@@ -1,10 +1,11 @@
 export type Stage = 'pick' | 'phone' | 'code' | 'done'
 
 export const CODE_LENGTH = 6
+export const RESEND_COOLDOWN_SECONDS = 30
+
 // Nigerian mobile numbers: 10 digits after the leading 0, starting 7/8/9.
 export const NG_PHONE_REGEX = /^[789]\d{9}$/
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-export const RESEND_COOLDOWN_SECONDS = 30
 
 export const BACK_LINK_CLASS =
   'block w-full cursor-pointer text-center text-xs font-semibold text-muted transition-colors hover:text-foreground hover:underline hover:decoration-lime hover:decoration-2 hover:underline-offset-4 active:opacity-70'

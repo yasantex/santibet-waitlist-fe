@@ -1,4 +1,8 @@
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import type { PredictionSide } from '../../utils/types'
+
+const SIDE_ICON = { yes: Tick02Icon, no: Cancel01Icon }
 
 interface PickStepProps {
   /** YES share for the open question; null when we have none for it. */
@@ -32,7 +36,10 @@ export default function PickStep({
             aria-pressed={pickedSide === side}
             className='btn-lift flex min-h-14 lg:min-h-24 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-border bg-surface-2 px-3 py-3 text-foreground hover:border-dark aria-pressed:border-lime aria-pressed:bg-lime aria-pressed:text-lime-ink dark:hover:border-lime'
           >
-            <span className='text-base font-bold tracking-[0.05em] uppercase lg:text-xl'>{side}</span>
+            <span className='flex items-center gap-2 text-base font-bold tracking-[0.05em] uppercase lg:text-xl'>
+              <HugeiconsIcon icon={SIDE_ICON[side]} size={20} strokeWidth={2.5} />
+              {side}
+            </span>
             {percent[side] != null && (
               <span className='text-[11px] font-medium opacity-70 lg:text-xs'>
                 {percent[side]}% of predictions
