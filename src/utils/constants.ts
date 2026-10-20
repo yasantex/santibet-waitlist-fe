@@ -66,7 +66,7 @@ type FormStep = 'pick' | 'phone' | 'code' | 'join'
 type VerificationMethod = 'phone' | 'email'
 type Side = 'yes' | 'no'
 type ErrorInfo = { error_type: string; error_code: string }
-export type WaitlistSource = 'auto' | 'cta' | 'predict'
+export type WaitlistSource = 'auto' | 'cta' | 'predict' | 'add_number'
 export type JoinMethod = 'phone' | 'email'
 
 type AnalyticsEvent =

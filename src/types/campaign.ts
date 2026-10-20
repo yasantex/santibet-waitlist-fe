@@ -155,6 +155,8 @@ export interface PreviousQuestion extends TodayQuestion {
 
 export interface LeaderboardEntry {
   participantNumber: number
+  /** Masked (e.g. +234******5494) for a proved number; null for an email joiner. */
+  phone: string | null
   points: number
   rank: number | null
   currentStreak: number

@@ -4,14 +4,21 @@ import { createContext, useCallback, useContext, useState } from 'react'
 import { toast } from 'sonner'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
-import type { WaitlistSource } from '../utils/constants'
+import { trackEvent, type WaitlistSource } from '../utils/constants'
 import { focusQuestionCard } from '../utils/page'
 import { useActiveCampaign } from '../hooks/useCampaign'
 import { useAppSelector } from '../redux/hooks'
 import { selectHasVerifiedDevice } from '../redux/campaignSlice'
 import WaitlistModal from './modals/WaitlistModal'
+import { isThankYouUrl } from './modals/ThankYouModal'
 
-const WaitlistContext = createContext<((source: WaitlistSource) => void) | null>(null)
+interface WaitlistContextValue {
+  openWaitlist: (source: WaitlistSource) => void
+  /** Bumped each time a new signup should see the thank-you screen. */
+  thankYouRequests: number
+}
+
+const WaitlistContext = createContext<WaitlistContextValue | null>(null)
 
 /**
  * Owns the join modal. A campaign only has one when `joinRequiresPrediction` is false; then it
@@ -34,7 +41,8 @@ export function WaitlistProvider({ children }: { children: React.ReactNode }) {
   const [arrivalChecked, setArrivalChecked] = useState(false)
   if (!arrivalChecked && activeCampaign) {
     setArrivalChecked(true)
-    if (hasModal && !verified) setSource('auto')
+    // Someone landing on ?step=thank-you sees that screen, not the join modal on top of it.
+    if (hasModal && !verified && !isThankYouUrl()) setSource('auto')
   }
 
   const openWaitlist = useCallback(
@@ -49,13 +57,23 @@ export function WaitlistProvider({ children }: { children: React.ReactNode }) {
     [hasModal],
   )
   const close = useCallback(() => setSource(null), [])
+  const [thankYouRequests, setThankYouRequests] = useState(0)
 
   function handleJoined(alreadyJoined: boolean) {
+    const addingNumber = source === 'add_number'
     setSource(null)
+    // A new signup gets the thank-you screen (and its ?step=thank-you URL for GA4 / Meta).
+    if (!alreadyJoined && !addingNumber) {
+      setThankYouRequests((n) => n + 1)
+      trackEvent({ event: 'thank_you_view', user_type: 'new' })
+      return
+    }
     toast(
-      alreadyJoined
-        ? "You're already on the list. Make today's prediction."
-        : "You're on the waitlist! Make today's prediction.",
+      addingNumber
+        ? "Number added. You're predicting with it now."
+        : alreadyJoined
+          ? "You're already on the list. Make today's prediction."
+          : "You're on the waitlist! Make today's prediction.",
       { icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} /> },
     )
     focusQuestionCard()
@@ -68,7 +86,7 @@ export function WaitlistProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WaitlistContext.Provider value={openWaitlist}>
+    <WaitlistContext.Provider value={{ openWaitlist, thankYouRequests }}>
       {children}
       {source && hasModal && (
         <WaitlistModal
@@ -86,7 +104,16 @@ export function WaitlistProvider({ children }: { children: React.ReactNode }) {
 
 /** Opens the join modal, or points at the question when this campaign has none. */
 export function useOpenWaitlist() {
-  const open = useContext(WaitlistContext)
-  if (!open) throw new Error('useOpenWaitlist must be used inside WaitlistProvider')
-  return open
+  return useWaitlistContext().openWaitlist
+}
+
+/** Changes each time a signup through the modal should open the thank-you screen. */
+export function useThankYouRequests() {
+  return useWaitlistContext().thankYouRequests
+}
+
+function useWaitlistContext() {
+  const value = useContext(WaitlistContext)
+  if (!value) throw new Error('Waitlist hooks must be used inside WaitlistProvider')
+  return value
 }

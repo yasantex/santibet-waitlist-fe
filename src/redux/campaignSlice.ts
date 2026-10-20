@@ -31,6 +31,20 @@ const initialState: CampaignState = {
   standing: null,
 }
 
+/** Remembers `phone` (without a standing yet) and makes it the current number. */
+function rememberNumber(state: CampaignState, phone: string) {
+  if (!state.numbers.some((n) => n.phone === phone)) {
+    state.numbers = [
+      ...state.numbers,
+      { phone, deviceToken: null, standing: null },
+    ].slice(0, MAX_DEVICE_NUMBERS)
+  }
+  if (state.currentPhone !== phone) {
+    state.currentPhone = phone
+    state.standing = state.numbers.find((n) => n.phone === phone)?.standing ?? null
+  }
+}
+
 const campaignSlice = createSlice({
   name: 'campaign',
   initialState,
@@ -65,18 +79,12 @@ const campaignSlice = createSlice({
     },
     /** A proven prediction for `phone` shows the device already holds its key. */
     numberProven: (state, action: PayloadAction<string>) => {
-      const phone = action.payload
-      if (!state.numbers.some((n) => n.phone === phone)) {
-        state.numbers = [
-          ...state.numbers,
-          { phone, deviceToken: null, standing: null },
-        ].slice(0, MAX_DEVICE_NUMBERS)
-      }
-      if (state.currentPhone !== phone) {
-        state.currentPhone = phone
-        state.standing =
-          state.numbers.find((n) => n.phone === phone)?.standing ?? null
-      }
+      rememberNumber(state, action.payload)
+    },
+    /** `phone` is already on the list (/join said JOINED), so predict with it without asking
+     *  again. If this device holds no key for it, its first prediction asks for a code. */
+    numberJoined: (state, action: PayloadAction<string>) => {
+      rememberNumber(state, action.payload)
     },
     switchNumber: (state, action: PayloadAction<string>) => {
       const entry = state.numbers.find((n) => n.phone === action.payload)
@@ -114,6 +122,7 @@ export const {
   numberVerified,
   emailVerified,
   numberProven,
+  numberJoined,
   switchNumber,
   clearCampaignAuth,
 } = campaignSlice.actions

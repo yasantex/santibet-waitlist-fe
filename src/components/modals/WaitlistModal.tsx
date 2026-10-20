@@ -22,7 +22,7 @@ import {
   useJoinCampaign,
 } from '../../hooks/useCampaign'
 import { useAppDispatch } from '../../redux/hooks'
-import { emailVerified, numberVerified } from '../../redux/campaignSlice'
+import { emailVerified, numberJoined, numberVerified } from '../../redux/campaignSlice'
 import {
   WAITLIST_COUNT_LABEL,
   errorInfo,
@@ -196,6 +196,7 @@ export default function WaitlistModal({
     try {
       const result = await joinMutation.mutateAsync({ ...contact, referralCode })
       if (result.status === 'JOINED') {
+        if (joinMethod === 'phone') dispatch(numberJoined(phone))
         onJoined(true)
         return
       }
@@ -230,6 +231,7 @@ export default function WaitlistModal({
     try {
       const result = await joinMutation.mutateAsync({ ...contact, referralCode })
       if (result.status === 'JOINED') {
+        if (joinMethod === 'phone') dispatch(numberJoined(phone))
         onJoined(true)
         return
       }
@@ -326,7 +328,9 @@ export default function WaitlistModal({
           Join the Waitlist
         </h2>
         <p className='mb-5 max-w-90 text-sm leading-relaxed text-muted'>
-          Free to join. Predict daily, win airtime, data, and cash before launch.
+          {source === 'add_number'
+            ? 'Join with the number or email you want to predict with.'
+            : 'Free to join. Predict daily, win airtime, data, and cash before launch.'}
         </p>
 
         {stage === 'code' ? (
