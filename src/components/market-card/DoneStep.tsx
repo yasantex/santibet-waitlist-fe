@@ -5,6 +5,8 @@ import { BACK_LINK_CLASS } from './utils'
 
 interface DoneStepProps {
   pickedSide: PredictionSide | null
+  /** Masked number the prediction went in for, if we know it. */
+  predictingAsLabel: string | null
   closesClock: string
   onViewEntry: () => void
   onPredictAnother: () => void
@@ -13,6 +15,7 @@ interface DoneStepProps {
 /** What the card shows once the prediction is in and the thank-you screen is closed. */
 export default function DoneStep({
   pickedSide,
+  predictingAsLabel,
   closesClock,
   onViewEntry,
   onPredictAnother,
@@ -21,7 +24,11 @@ export default function DoneStep({
     <div className='animate-slide-up'>
       <div className='flex items-center justify-center gap-2 rounded-xl border border-success/60 bg-success/10 px-3 py-3 text-center text-sm font-semibold text-success shadow-[0_0_16px_rgb(22_163_74/0.12)]'>
         <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className='shrink-0' />
-        Your {pickedSide?.toUpperCase()} prediction is locked. Come back for the next question.
+        <span>
+          Your {pickedSide?.toUpperCase()} prediction is locked
+          {predictingAsLabel ? ` for ${predictingAsLabel}` : ''}. Come back for the next
+          question.
+        </span>
       </div>
 
       <div className='mt-3 grid grid-cols-2 gap-2'>

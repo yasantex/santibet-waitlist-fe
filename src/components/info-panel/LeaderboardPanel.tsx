@@ -7,24 +7,46 @@ import {
   useLeaderboard,
   useStanding,
 } from '../../hooks/useCampaign'
+import { useAppSelector } from '../../redux/hooks'
 import { levelName, sortLevels } from '../../utils/levels'
+import { maskPhone } from '../market-card/utils'
 import SectionTitle, { PanelMessage } from './SectionTitle'
 
+// Gold, silver, bronze for the top three.
 const RANK_STYLE = [
-  'bg-lime text-lime-ink',
-  'bg-dark text-lime dark:bg-success dark:text-lime-ink',
-  'bg-success/80 text-white dark:text-lime-ink',
+  'bg-[#facc15] text-[#422006]',
+  'bg-[#9ca3af] text-white',
+  'bg-[#c2703d] text-white',
 ]
+
+/** Tier names read "Pro Founder" etc. — the board already says Founders, so drop it. */
+function tierLabel(name: string | null) {
+  return name?.replace(/\s*Founder$/i, '') || null
+}
+
+/** 4 → "#0004" */
+function founderNo(participantNumber: number) {
+  return `#${String(participantNumber).padStart(4, '0')}`
+}
+
+/** The API's masked number (+234******5494) in display form: 234••••••5494. */
+function displayPhone(masked: string) {
+  return masked.replace(/^\+/, '').replace(/\*/g, '•')
+}
 
 function Row({
   rank,
   name,
+  founder,
   tier,
   points,
   you,
 }: {
   rank: number | null
+  /** The masked number, or the Founder number for an email joiner. */
   name: string
+  /** "#0004" under the number; omitted when `name` already is the Founder number. */
+  founder: string | null
   tier: string | null
   points: number
   you?: boolean
@@ -47,11 +69,14 @@ function Row({
           className={`truncate text-[13px] font-semibold ${you ? 'text-success' : 'text-foreground'}`}
         >
           {name}
+          {you && <span className='sr-only'> (you)</span>}
         </div>
-        {tier && <div className='text-[11px] text-muted'>{tier}</div>}
+        <div className='text-[11px] text-muted'>
+          {[founder, tier].filter(Boolean).join(' · ')}
+        </div>
       </div>
-      <span className='shrink-0 text-[13px] font-bold text-dark dark:text-lime'>
-        {points.toLocaleString()} pts
+      <span className='shrink-0 text-[13px] font-bold text-success'>
+        {points.toLocaleString()}pt
       </span>
     </div>
   )
@@ -63,13 +88,11 @@ export default function LeaderboardPanel() {
   const { data, isLoading } = useLeaderboard(slug, 5)
   const { data: rules } = useCampaignRules(slug)
   const standing = useStanding(slug)
+  const currentPhone = useAppSelector((s) => s.campaign.currentPhone)
   const levels = sortLevels(rules?.levels)
   const rows = data?.data ?? []
   const youOnBoard =
     standing != null && rows.some((r) => r.participantNumber === standing.participantNumber)
-  const remaining = activeCampaign
-    ? Math.max(activeCampaign.participantCount - rows.length, 0)
-    : 0
 
   return (
     <div>
@@ -87,11 +110,12 @@ export default function LeaderboardPanel() {
                 key={entry.participantNumber}
                 rank={i + 1}
                 name={
-                  you
-                    ? `You · Founder #${entry.participantNumber}`
-                    : `Founder #${entry.participantNumber}`
+                  entry.phone
+                    ? displayPhone(entry.phone)
+                    : founderNo(entry.participantNumber)
                 }
-                tier={levelName(levels, entry.level)}
+                founder={entry.phone ? founderNo(entry.participantNumber) : null}
+                tier={tierLabel(levelName(levels, entry.level))}
                 points={entry.points}
                 you={you}
               />
@@ -100,16 +124,16 @@ export default function LeaderboardPanel() {
           {standing && !youOnBoard && (
             <Row
               rank={standing.rank}
-              name={`You · Founder #${standing.participantNumber.toLocaleString()}`}
-              tier={levelName(levels, standing.level)}
+              name={
+                currentPhone
+                  ? maskPhone(currentPhone)
+                  : founderNo(standing.participantNumber)
+              }
+              founder={currentPhone ? founderNo(standing.participantNumber) : null}
+              tier={tierLabel(levelName(levels, standing.level))}
               points={standing.points}
               you
             />
-          )}
-          {remaining > 0 && (
-            <div className='pt-3 text-center text-xs text-muted'>
-              {remaining.toLocaleString()} more Founders climbing the board
-            </div>
           )}
         </>
       )}

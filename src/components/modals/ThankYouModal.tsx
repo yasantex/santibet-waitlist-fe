@@ -43,6 +43,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 const STEP_PARAM = 'step'
 const STEP_VALUE = 'thank-you'
 
+/** True when the page was opened at ?step=thank-you — the screen opens straight away. */
+export function isThankYouUrl() {
+  return (
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get(STEP_PARAM) === STEP_VALUE
+  )
+}
+
 /** Sets or clears ?step=thank-you without reloading, keeping any other params (e.g. ?ref=). */
 function setStepParam(on: boolean, mode: 'push' | 'replace') {
   const url = new URL(window.location.href)
@@ -52,7 +60,8 @@ function setStepParam(on: boolean, mode: 'push' | 'replace') {
   window.history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', url)
 }
 
-/** "You're in" modal shown right after a prediction is locked. */
+/** "You're in" modal: after a prediction is locked, after joining, or at ?step=thank-you.
+ *  Without a locked prediction (`pickedSide` null) it speaks to the waitlist alone. */
 export default function ThankYouModal({
   open,
   pickedSide,
@@ -63,11 +72,6 @@ export default function ThankYouModal({
   onClose,
   onPredictAnother,
 }: ThankYouModalProps) {
-  // A refreshed or shared ?step=thank-you link has no prediction behind it — drop the param.
-  useEffect(() => {
-    setStepParam(false, 'replace')
-  }, [])
-
   useEffect(() => {
     if (!open) return
     setStepParam(true, 'push')
@@ -132,11 +136,20 @@ export default function ThankYouModal({
           id='thank-you-title'
           className='animate-gradient-text mb-1.5 bg-linear-135 from-dark via-success to-dark text-2xl font-extrabold tracking-[-0.02em] dark:from-lime dark:via-success dark:to-lime'
         >
-          You&apos;re in. Prediction locked.
+          {pickedSide ? <>You&apos;re in. Prediction locked.</> : <>You&apos;re in.</>}
         </h2>
         <p className='mb-5 max-w-75 text-sm text-muted sm:max-w-110'>
-          Your {pickedSide?.toUpperCase()} prediction is saved and you&apos;re on the
-          SantiBet waitlist. Come back for the next question.
+          {pickedSide ? (
+            <>
+              Your {pickedSide.toUpperCase()} prediction is saved and you&apos;re on the
+              SantiBet waitlist. Come back for the next question.
+            </>
+          ) : (
+            <>
+              You&apos;re on the SantiBet waitlist. Make today&apos;s prediction to start
+              earning Founder Points.
+            </>
+          )}
         </p>
 
         <div
