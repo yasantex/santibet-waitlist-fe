@@ -24,8 +24,7 @@ import {
 import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import {
-  numberProven,
-  numberVerified,
+  playerJoined,
   setStanding,
   switchNumber,
 } from '../redux/campaignSlice'
@@ -36,6 +35,7 @@ import {
   trackEvent,
 } from '../utils/constants'
 import { readReferralCode } from '../utils/page'
+import { standingFromCard } from '../utils/standing'
 import type { PredictionParticipant } from '../types/campaign'
 import WaitlistRulesModal from './modals/WaitlistRulesModal'
 import HowToPlayModal from './modals/HowToPlayModal'
@@ -43,7 +43,8 @@ import PickStep from './market-card/PickStep'
 import PhoneStep from './market-card/PhoneStep'
 import CodeStep from './market-card/CodeStep'
 import DoneStep from './market-card/DoneStep'
-import ThankYouModal from './modals/ThankYouModal'
+import ThankYouModal, { isThankYouUrl } from './modals/ThankYouModal'
+import { useOpenWaitlist, useThankYouRequests } from './WaitlistContext'
 import {
   CODE_LENGTH,
   RESEND_COOLDOWN_SECONDS,
@@ -70,6 +71,8 @@ export default function MarketCard() {
   const cachedStanding = useAppSelector((s) => s.campaign.standing)
   const savedNumbers = useAppSelector((s) => s.campaign.numbers)
   const currentPhone = useAppSelector((s) => s.campaign.currentPhone)
+  // Shown in "Predicting as …" only; the browser's token decides who it plays as.
+  const displayPhone = useAppSelector((s) => s.campaign.displayPhone)
 
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
@@ -86,7 +89,12 @@ export default function MarketCard() {
   const standing = meData ?? cachedStanding
   const closes = useCountdown(todayQuestion?.closesAt)
 
-  const knownReturningPlayer = Boolean(standing)
+  // A remembered number counts too: someone who joined through the modal predicts with it
+  // straight away instead of typing it again.
+  const knownReturningPlayer = Boolean(standing) || Boolean(currentPhone)
+  // With a join modal, a new number is added there (join, then predict) rather than typed here.
+  const hasJoinModal = activeCampaign?.joinRequiresPrediction === false
+  const openWaitlist = useOpenWaitlist()
 
   const predictMutation = usePredict(slug)
   const confirmMutation = useConfirmVerification(slug)
@@ -97,6 +105,8 @@ export default function MarketCard() {
   const [changingPhone, setChangingPhone] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [phone, setPhone] = useState('')
+  /** The number the code being entered was sent for. */
+  const [codePhone, setCodePhone] = useState('')
   const [code, setCode] = useState('')
   const [stage, setStage] = useState<Stage>('pick')
   const [destination, setDestination] = useState('')
@@ -105,8 +115,16 @@ export default function MarketCard() {
   const [emailSent, setEmailSent] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(false)
-  const [thankYouOpen, setThankYouOpen] = useState(false)
+  // A visit to ?step=thank-you opens the screen straight away.
+  const [thankYouOpen, setThankYouOpen] = useState(isThankYouUrl)
   const closeThankYou = useCallback(() => setThankYouOpen(false), [])
+  // A signup through the join modal opens it too.
+  const thankYouRequests = useThankYouRequests()
+  const [seenThankYouRequests, setSeenThankYouRequests] = useState(thankYouRequests)
+  if (thankYouRequests !== seenThankYouRequests) {
+    setSeenThankYouRequests(thankYouRequests)
+    setThankYouOpen(true)
+  }
 
   /** Opens the thank-you screen after a confirmed prediction and counts the view. */
   function showThankYou(userType: 'new' | 'returning') {
@@ -171,11 +189,13 @@ export default function MarketCard() {
   const needsPhone = standing?.hasPhone === false
   const showPhoneStep = !knownReturningPlayer || changingPhone || needsPhone
   const otherSavedNumbers = savedNumbers.filter((n) => n.phone !== currentPhone)
-  const predictingAsLabel = knownReturningPlayer && !needsPhone
-    ? currentPhone
-      ? maskPhone(currentPhone)
-      : 'your verified number'
-    : null
+  const shownPhone = currentPhone ?? displayPhone
+  const predictingAsLabel =
+    knownReturningPlayer && !needsPhone
+      ? shownPhone
+        ? maskPhone(shownPhone)
+        : 'your verified number'
+      : null
   const closesClock = closes
     ? `${closes.hours}:${closes.mins}:${closes.secs}`
     : '—:—:—'
@@ -233,7 +253,12 @@ export default function MarketCard() {
     })
   }
 
-  function startCodeEntry(sentTo: string, cooldown = RESEND_COOLDOWN_SECONDS) {
+  function startCodeEntry(
+    forPhone: string,
+    sentTo: string,
+    cooldown = RESEND_COOLDOWN_SECONDS,
+  ) {
+    setCodePhone(forPhone)
     setDestination(sentTo)
     setCode('')
     setResendCooldown(cooldown)
@@ -259,7 +284,7 @@ export default function MarketCard() {
       })
       // A number not yet verified in this campaign gets a code; the call lands on confirm.
       if (result.status === 'AWAITING_CODE') {
-        startCodeEntry(result.destination ?? '')
+        startCodeEntry(predictPhone ?? '', result.destination ?? '')
         return
       }
       setPlacedUnproven(result.proven === false)
@@ -272,9 +297,20 @@ export default function MarketCard() {
             }
           : null,
       )
-      // Proven means this device holds the number's key, so it's one we can play as.
-      if (predictPhone && result.proven !== false) {
-        dispatch(numberProven(predictPhone))
+      // Proven means this browser now holds the player's key (a new token may have come with
+      // the reply), so it plays as them. Their typed number is only kept for display.
+      if (result.proven !== false && result.participantNumber != null && result.referralCode) {
+        dispatch(
+          playerJoined({
+            standing: standingFromCard({
+              ...result,
+              participantNumber: result.participantNumber,
+              referralCode: result.referralCode,
+              rank: result.rank ?? null,
+            }),
+            displayPhone: predictPhone,
+          }),
+        )
       }
       setChangingPhone(false)
       setStage('done')
@@ -284,11 +320,18 @@ export default function MarketCard() {
       const info = errorInfo(err)
       // A code was already sent for this pick — take them back to the code entry
       // instead of dead-ending; resend is available straight away.
+      // An email joiner's first prediction must carry their number.
+      if (info.error_code === 'PHONE_REQUIRED') {
+        setChangingPhone(true)
+        setErrorMsg('Enter your mobile number to finish your first prediction.')
+        return
+      }
       if (info.error_code === 'PREDICTION_AWAITING_CODE') {
         const data = (err as { response?: { data?: { destination?: string } } })
           .response?.data
         startCodeEntry(
-          data?.destination ?? `+234 ${formatPhoneDisplay(phone.trim())}`,
+          predictPhone ?? '',
+          data?.destination ?? `+234 ${formatPhoneDisplay(predictPhone ?? '')}`,
           0,
         )
         return
@@ -319,10 +362,10 @@ export default function MarketCard() {
     setErrorMsg(null)
     try {
       const result = await confirmMutation.mutateAsync({
-        phone: phone.trim(),
+        phone: codePhone,
         code: code.trim(),
       })
-      dispatch(numberVerified({ phone: phone.trim(), standing: result }))
+      dispatch(playerJoined({ standing: result, displayPhone: codePhone }))
       setChangingPhone(false)
       setPlacedUnproven(false)
       setPlacedParticipant(null)
@@ -371,7 +414,7 @@ export default function MarketCard() {
     if (resendCooldown > 0) return
     setErrorMsg(null)
     try {
-      const result = await resendMutation.mutateAsync({ phone: phone.trim() })
+      const result = await resendMutation.mutateAsync({ phone: codePhone })
       setDestination(result.destination)
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
       trackEvent({
@@ -396,7 +439,7 @@ export default function MarketCard() {
     setErrorMsg(null)
     try {
       const result = await emailVerificationMutation.mutateAsync({
-        phone: phone.trim(),
+        phone: codePhone,
         email,
       })
       setDestination(result.destination)
@@ -429,9 +472,27 @@ export default function MarketCard() {
     setPlacedUnproven(false)
     setPlacedParticipant(null)
     setErrorMsg(null)
-    setSwitcherOpen(otherSavedNumbers.length > 0)
-    setChangingPhone(otherSavedNumbers.length === 0)
     setStage('pick')
+    if (otherSavedNumbers.length > 0) {
+      setSwitcherOpen(true)
+      setChangingPhone(false)
+    } else {
+      addNumber()
+    }
+  }
+
+  /** Predict with a number this device hasn't used: join it through the modal first when the
+   *  campaign has one, otherwise type it here (it's verified with a code on predicting). */
+  function addNumber() {
+    setSwitcherOpen(false)
+    setErrorMsg(null)
+    if (hasJoinModal) {
+      setChangingPhone(false)
+      openWaitlist('add_number')
+      return
+    }
+    setChangingPhone(true)
+    setPhone('')
   }
 
   return (
@@ -477,6 +538,9 @@ export default function MarketCard() {
             <div className='animate-gradient-text bg-linear-135 from-dark via-success to-dark text-[26px] leading-[1.05] font-extrabold tracking-[-0.02em] uppercase sm:text-3xl lg:text-[40px] dark:from-lime dark:via-success dark:to-lime'>
               Predict &amp; Win Daily
             </div>
+            <p className='mt-1 text-xs font-semibold text-muted lg:text-sm'>
+              Win airtime, data and cash daily.
+            </p>
           </div>
 
           <div className='mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2 px-3.5 py-3 lg:mb-6 lg:px-4'>
@@ -516,6 +580,7 @@ export default function MarketCard() {
             {stage === 'phone' && pickedSide && (
               <PhoneStep
                 pickedSide={pickedSide}
+                requiresCode={activeCampaign?.requiresVerification !== false}
                 predictingAsLabel={predictingAsLabel}
                 otherNumbers={otherSavedNumbers}
                 enteringNumber={changingPhone}
@@ -533,12 +598,7 @@ export default function MarketCard() {
                   setSwitcherOpen(false)
                   setErrorMsg(null)
                 }}
-                onAddNumber={() => {
-                  setSwitcherOpen(false)
-                  setChangingPhone(true)
-                  setPhone('')
-                  setErrorMsg(null)
-                }}
+                onAddNumber={addNumber}
                 onCancelAddNumber={() => {
                   setChangingPhone(false)
                   setPhone('')
@@ -587,6 +647,7 @@ export default function MarketCard() {
             {stage === 'done' && (
               <DoneStep
                 pickedSide={pickedSide}
+                predictingAsLabel={predictingAsLabel}
                 closesClock={closesClock}
                 onViewEntry={() => setThankYouOpen(true)}
                 onPredictAnother={handlePredictAnother}
@@ -619,8 +680,9 @@ export default function MarketCard() {
       )}
 
       <ThankYouModal
-        open={thankYouOpen && stage === 'done'}
-        pickedSide={pickedSide}
+        open={thankYouOpen}
+        // Only a locked prediction is worth naming; otherwise it's the waitlist screen.
+        pickedSide={stage === 'done' ? pickedSide : null}
         founder={doneFounder}
         closesClock={closesClock}
         grandPrizeLabel={grandPrizeLabel}

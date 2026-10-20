@@ -15,6 +15,8 @@ import {
 
 interface PhoneStepProps {
   pickedSide: PredictionSide
+  /** False when the campaign asks nobody for a code. */
+  requiresCode: boolean
   /** Set for a returning player: the masked number they predict as. */
   predictingAsLabel: string | null
   otherNumbers: VerifiedNumber[]
@@ -36,6 +38,7 @@ interface PhoneStepProps {
 
 export default function PhoneStep({
   pickedSide,
+  requiresCode,
   predictingAsLabel,
   otherNumbers,
   enteringNumber,
@@ -126,7 +129,7 @@ export default function PhoneStep({
 
       <div className='mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-muted'>
         <HugeiconsIcon icon={LockIcon} size={12} />
-        Free · One-time verification
+        {requiresCode ? 'Free · One-time verification' : 'Free · No deposit, no payment'}
       </div>
       <div className='mt-1.5 text-center text-[11px] text-muted'>
         By continuing, you agree to our{' '}

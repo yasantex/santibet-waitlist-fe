@@ -27,6 +27,8 @@ export interface Campaign {
   joinRequiresPrediction?: boolean
   /** The join modal offers email as well as phone. */
   allowEmailJoin?: boolean
+  /** False: nobody is ever asked for a code; what they type is taken as given. */
+  requiresVerification?: boolean
 }
 
 export interface CampaignStats {
@@ -155,6 +157,8 @@ export interface PreviousQuestion extends TodayQuestion {
 
 export interface LeaderboardEntry {
   participantNumber: number
+  /** Masked (e.g. +234******5494) for a proved number; null for an email joiner. */
+  phone: string | null
   points: number
   rank: number | null
   currentStreak: number
@@ -191,14 +195,29 @@ export interface SendVerificationResult {
   participantNumber: number
 }
 
-/** POST /join. AWAITING_CODE: a code went to `destination`. JOINED: already verified here. */
-export interface JoinResult {
-  status: 'AWAITING_CODE' | 'JOINED'
-  alreadyJoined: boolean
-  destination?: string
+/** The founder card every /join and prediction reply carries (as of the last rescore). */
+export interface PlayerCard {
   participantNumber: number
   referralCode: string
   rank: number | null
+  points?: number
+  level?: string | null
+  currentStreak?: number
+  longestStreak?: number
+  /** False for an email joiner with no number yet. */
+  hasPhone?: boolean
+  /** Only for X-Client-Type: mobile; web gets the cookie. */
+  deviceToken?: string
+}
+
+/**
+ * POST /join. `status` says whether a code is needed now (AWAITING_CODE) or not (JOINED);
+ * `alreadyJoined` says whether they were on the list before this call.
+ */
+export interface JoinResult extends PlayerCard {
+  status: 'AWAITING_CODE' | 'JOINED'
+  alreadyJoined: boolean
+  destination?: string
 }
 
 /** One entry of GET /api/pages. */
@@ -226,6 +245,12 @@ export interface PredictionResult {
   participantNumber?: number
   referralCode?: string
   rank?: number | null
+  points?: number
+  level?: string | null
+  currentStreak?: number
+  longestStreak?: number
+  hasPhone?: boolean
+  deviceToken?: string
 }
 
 /** The founder details the done step shows, from the predict response or a standing. */

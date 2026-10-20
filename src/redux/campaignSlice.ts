@@ -22,6 +22,8 @@ export interface CampaignState {
   deviceToken: string | null
   /** Standing of the current number. */
   standing: ParticipantStanding | null
+  /** The number this browser's player joined or predicted with — shown, never sent. */
+  displayPhone: string | null
 }
 
 const initialState: CampaignState = {
@@ -29,6 +31,7 @@ const initialState: CampaignState = {
   currentPhone: null,
   deviceToken: null,
   standing: null,
+  displayPhone: null,
 }
 
 const campaignSlice = createSlice({
@@ -45,50 +48,27 @@ const campaignSlice = createSlice({
         state.deviceToken = action.payload.deviceToken
       }
     },
-    /** A code was confirmed for `phone`: it moves to the front and becomes current. */
-    numberVerified: (
+    /**
+     * A join, code confirm or prediction reply named the player this browser now plays as.
+     * The browser's token (cookie on web) decides who that is, so a typed number never becomes
+     * `currentPhone` — it's kept in `displayPhone` for "Predicting as …" only.
+     * `displayPhone`: undefined leaves it as is; null clears it (an email joiner).
+     */
+    playerJoined: (
       state,
-      action: PayloadAction<{ phone: string; standing: ParticipantStanding }>,
+      action: PayloadAction<{ standing: ParticipantStanding; displayPhone?: string | null }>,
     ) => {
-      const { phone, standing } = action.payload
-      const previous = state.numbers.find((n) => n.phone === phone)
-      state.numbers = [
-        {
-          phone,
-          deviceToken: standing.deviceToken ?? previous?.deviceToken ?? null,
-          standing,
-        },
-        ...state.numbers.filter((n) => n.phone !== phone),
-      ].slice(0, MAX_DEVICE_NUMBERS)
-      state.currentPhone = phone
+      const { standing, displayPhone } = action.payload
       state.standing = standing
-    },
-    /** A proven prediction for `phone` shows the device already holds its key. */
-    numberProven: (state, action: PayloadAction<string>) => {
-      const phone = action.payload
-      if (!state.numbers.some((n) => n.phone === phone)) {
-        state.numbers = [
-          ...state.numbers,
-          { phone, deviceToken: null, standing: null },
-        ].slice(0, MAX_DEVICE_NUMBERS)
-      }
-      if (state.currentPhone !== phone) {
-        state.currentPhone = phone
-        state.standing =
-          state.numbers.find((n) => n.phone === phone)?.standing ?? null
-      }
+      state.currentPhone = null
+      if (displayPhone !== undefined) state.displayPhone = displayPhone
+      if (standing.deviceToken) state.deviceToken = standing.deviceToken
     },
     switchNumber: (state, action: PayloadAction<string>) => {
       const entry = state.numbers.find((n) => n.phone === action.payload)
       if (!entry) return
       state.currentPhone = entry.phone
       state.standing = entry.standing
-    },
-    /** An email was confirmed: there's no number yet, so its standing and key stand alone. */
-    emailVerified: (state, action: PayloadAction<ParticipantStanding>) => {
-      state.standing = action.payload
-      state.currentPhone = null
-      if (action.payload.deviceToken) state.deviceToken = action.payload.deviceToken
     },
     clearCampaignAuth: () => initialState,
   },
@@ -111,9 +91,7 @@ export const selectHasVerifiedDevice = (state: RootState) =>
 
 export const {
   setStanding,
-  numberVerified,
-  emailVerified,
-  numberProven,
+  playerJoined,
   switchNumber,
   clearCampaignAuth,
 } = campaignSlice.actions

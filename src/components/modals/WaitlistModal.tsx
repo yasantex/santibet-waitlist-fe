@@ -22,7 +22,9 @@ import {
   useJoinCampaign,
 } from '../../hooks/useCampaign'
 import { useAppDispatch } from '../../redux/hooks'
-import { emailVerified, numberVerified } from '../../redux/campaignSlice'
+import { playerJoined } from '../../redux/campaignSlice'
+import { standingFromCard } from '../../utils/standing'
+import type { JoinResult } from '../../types/campaign'
 import {
   WAITLIST_COUNT_LABEL,
   errorInfo,
@@ -110,6 +112,8 @@ export default function WaitlistModal({
   const [stage, setStage] = useState<'contact' | 'code'>('contact')
   const [destination, setDestination] = useState('')
   const [code, setCode] = useState('')
+  /** They were on the list before this /join, so a confirm isn't a new signup. */
+  const [alreadyJoined, setAlreadyJoined] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -183,6 +187,30 @@ export default function WaitlistModal({
     return info
   }
 
+  /** Counted only for someone who wasn't on the list before — not a returning player. */
+  function trackSignup() {
+    trackEvent({
+      event: 'waitlist_signup_success',
+      form_name: 'waitlist',
+      referred: Boolean(referralCode),
+      source,
+      join_method: joinMethod,
+    })
+  }
+
+  /** JOINED: no code needed now — a returning player, or a campaign that asks for none.
+   *  The reply's founder card is who this browser plays as (its token came with it). */
+  function finishJoined(result: JoinResult) {
+    dispatch(
+      playerJoined({
+        standing: standingFromCard(result),
+        displayPhone: joinMethod === 'phone' ? phone : null,
+      }),
+    )
+    if (!result.alreadyJoined) trackSignup()
+    onJoined(result.alreadyJoined)
+  }
+
   async function handleJoin() {
     if (!canJoin) return
     setErrorMsg(null)
@@ -196,9 +224,10 @@ export default function WaitlistModal({
     try {
       const result = await joinMutation.mutateAsync({ ...contact, referralCode })
       if (result.status === 'JOINED') {
-        onJoined(true)
+        finishJoined(result)
         return
       }
+      setAlreadyJoined(result.alreadyJoined)
       setDestination(result.destination ?? '')
       setCode('')
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
@@ -230,7 +259,7 @@ export default function WaitlistModal({
     try {
       const result = await joinMutation.mutateAsync({ ...contact, referralCode })
       if (result.status === 'JOINED') {
-        onJoined(true)
+        finishJoined(result)
         return
       }
       if (result.destination) setDestination(result.destination)
@@ -247,23 +276,15 @@ export default function WaitlistModal({
     try {
       const standing = await confirmMutation.mutateAsync({ ...contact, code })
       dispatch(
-        joinMethod === 'phone'
-          ? numberVerified({ phone, standing })
-          : emailVerified(standing),
+        playerJoined({ standing, displayPhone: joinMethod === 'phone' ? phone : null }),
       )
       trackEvent({
         event: 'verification_completed',
         form_name: 'waitlist',
         verification_method: joinMethod,
       })
-      trackEvent({
-        event: 'waitlist_signup_success',
-        form_name: 'waitlist',
-        referred: Boolean(referralCode),
-        source,
-        join_method: joinMethod,
-      })
-      onJoined(false)
+      if (!alreadyJoined) trackSignup()
+      onJoined(alreadyJoined)
     } catch (err) {
       setErrorMsg(getApiErrorMessage(err, 'That code is invalid or has expired.'))
       const info = errorInfo(err)
@@ -326,17 +347,21 @@ export default function WaitlistModal({
           Join the Waitlist
         </h2>
         <p className='mb-5 max-w-90 text-sm leading-relaxed text-muted'>
-          Free to join. Predict daily, win airtime, data, and cash before launch.
+          {source === 'add_number'
+            ? 'Join with the number or email you want to predict with.'
+            : 'Free to join. Predict daily, win airtime, data, and cash before launch.'}
         </p>
 
         {stage === 'code' ? (
           <div className='w-full'>
             <div className='mb-3 flex items-center justify-between gap-3 text-left'>
               <p className='text-xs leading-snug text-muted'>
+                {alreadyJoined && <>You&apos;re already on the list. </>}
                 Enter the {CODE_LENGTH}-digit code sent to{' '}
                 <strong className='font-semibold text-foreground'>
                   {destination || (joinMethod === 'phone' ? 'your phone' : 'your email')}
                 </strong>
+                {alreadyJoined && ' to finish.'}
               </p>
               <button
                 type='button'
