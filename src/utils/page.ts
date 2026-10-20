@@ -22,3 +22,10 @@ export function referralLink(referralCode: string) {
     ? ''
     : `${window.location.origin}/?ref=${referralCode}`
 }
+
+/** The ?ref= code this visit arrived with, if any. */
+export function readReferralCode() {
+  return typeof window === 'undefined'
+    ? undefined
+    : (new URLSearchParams(window.location.search).get('ref') ?? undefined)
+}

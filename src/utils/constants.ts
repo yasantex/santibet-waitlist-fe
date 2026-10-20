@@ -17,6 +17,9 @@ import type { FounderBenefit } from './types'
 
 export const SUPPORT_EMAIL = 'support@santibet.com'
 
+/** Fixed social-proof figure for "people have joined" — not the live participant count. */
+export const WAITLIST_COUNT_LABEL = '2,444+'
+
 export type SocialName = 'instagram' | 'x' | 'tiktok' | 'facebook' | 'linkedin'
 
 export const socialLinks: { name: SocialName; label: string; handle: string; href: string }[] = [
@@ -59,10 +62,12 @@ export function formatMoney(money: Money, { compact = false } = {}) {
 // error messages in a payload — the API's messages can echo user input.
 
 type FormName = 'waitlist'
-type FormStep = 'pick' | 'phone' | 'code'
+type FormStep = 'pick' | 'phone' | 'code' | 'join'
 type VerificationMethod = 'phone' | 'email'
 type Side = 'yes' | 'no'
 type ErrorInfo = { error_type: string; error_code: string }
+export type WaitlistSource = 'auto' | 'cta' | 'predict'
+export type JoinMethod = 'phone' | 'email'
 
 type AnalyticsEvent =
   // 1. Traffic & page engagement
@@ -72,9 +77,11 @@ type AnalyticsEvent =
   | { event: 'social_link_click'; social_platform: SocialName; cta_name: string }
   // 2. Waitlist registration funnel
   | { event: 'waitlist_form_start'; form_name: FormName; form_step: 'pick'; side: Side; returning_player: boolean }
-  | { event: 'waitlist_form_submit'; form_name: FormName; form_step: 'phone'; returning_player: boolean }
-  | { event: 'waitlist_signup_success'; form_name: FormName; side?: Side; referred: boolean }
+  | { event: 'waitlist_form_submit'; form_name: FormName; form_step: 'join'; source: WaitlistSource; join_method: JoinMethod }
+  | { event: 'waitlist_signup_success'; form_name: FormName; side?: Side; referred: boolean; source: WaitlistSource; join_method: JoinMethod }
   | ({ event: 'waitlist_signup_failed'; form_name: FormName; form_step: FormStep } & ErrorInfo)
+  // The join modal opened: on arrival, from a Join CTA, or because an unlisted number tried to predict.
+  | { event: 'waitlist_modal_view'; source: WaitlistSource }
   | { event: 'verification_started'; form_name: FormName; verification_method: VerificationMethod }
   | { event: 'verification_completed'; form_name: FormName; verification_method: VerificationMethod }
   | ({ event: 'verification_failed'; form_name: FormName; verification_method: VerificationMethod } & ErrorInfo)

@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Clock01Icon, HelpCircleIcon } from '@hugeicons/core-free-icons'
+import {
+  Clock01Icon,
+  FlashIcon,
+  HelpCircleIcon,
+  UserAdd01Icon,
+} from '@hugeicons/core-free-icons'
 import { PredictionSide } from '../utils/types'
 import {
   getApiErrorMessage,
@@ -24,7 +29,13 @@ import {
   setStanding,
   switchNumber,
 } from '../redux/campaignSlice'
-import { errorInfo, formatMoney, trackEvent } from '../utils/constants'
+import {
+  WAITLIST_COUNT_LABEL,
+  errorInfo,
+  formatMoney,
+  trackEvent,
+} from '../utils/constants'
+import { readReferralCode } from '../utils/page'
 import type { PredictionParticipant } from '../types/campaign'
 import WaitlistRulesModal from './modals/WaitlistRulesModal'
 import HowToPlayModal from './modals/HowToPlayModal'
@@ -44,9 +55,14 @@ import {
 /** The API's ALREADY_PREDICTED message says "today", which is wrong once two questions can
  *  open on one calendar date — say it in our own words. */
 function predictErrorMessage(err: unknown, fallback: string) {
-  return errorInfo(err).error_code === 'ALREADY_PREDICTED'
-    ? "You've already answered this one."
-    : getApiErrorMessage(err, fallback)
+  switch (errorInfo(err).error_code) {
+    case 'ALREADY_PREDICTED':
+      return "You've already answered this one."
+    case 'PHONE_IN_USE':
+      return 'That number already belongs to another player. Try a different number.'
+    default:
+      return getApiErrorMessage(err, fallback)
+  }
 }
 
 export default function MarketCard() {
@@ -101,11 +117,7 @@ export default function MarketCard() {
   /** Who the last prediction was placed for, as the predict response reports it. */
   const [placedParticipant, setPlacedParticipant] =
     useState<PredictionParticipant | null>(null)
-  const [referralCode] = useState<string | undefined>(() =>
-    typeof window === 'undefined'
-      ? undefined
-      : (new URLSearchParams(window.location.search).get('ref') ?? undefined),
-  )
+  const [referralCode] = useState(readReferralCode)
 
   // A campaign day is not a calendar date: the next question can open the moment this one
   // closes, so a new campaignDay means a fresh card even if the player answered earlier today.
@@ -155,9 +167,11 @@ export default function MarketCard() {
     }
   }, [todayQuestionError, todayQuestionErrorDetail])
 
-  const showPhoneStep = !knownReturningPlayer || changingPhone
+  // An email joiner has no number yet; their first prediction asks for one (no second code).
+  const needsPhone = standing?.hasPhone === false
+  const showPhoneStep = !knownReturningPlayer || changingPhone || needsPhone
   const otherSavedNumbers = savedNumbers.filter((n) => n.phone !== currentPhone)
-  const predictingAsLabel = knownReturningPlayer
+  const predictingAsLabel = knownReturningPlayer && !needsPhone
     ? currentPhone
       ? maskPhone(currentPhone)
       : 'your verified number'
@@ -198,16 +212,12 @@ export default function MarketCard() {
     ? formatMoney(launchHeadlineTier.amount, { compact: true })
     : '₦1M'
 
-  function startCodeEntry(sentTo: string, cooldown = RESEND_COOLDOWN_SECONDS) {
-    setDestination(sentTo)
-    setCode('')
-    setResendCooldown(cooldown)
-    setStage('code')
-    trackEvent({
-      event: 'verification_started',
-      form_name: 'waitlist',
-      verification_method: 'phone',
-    })
+  /** Brings the YES / NO buttons into view for a player who has already joined. */
+  function scrollToOptions() {
+    document
+      .getElementById('market-options')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    trackEvent({ event: 'cta_click', cta_name: 'market_predict_now' })
   }
 
   function handlePick(side: PredictionSide) {
@@ -223,28 +233,31 @@ export default function MarketCard() {
     })
   }
 
+  function startCodeEntry(sentTo: string, cooldown = RESEND_COOLDOWN_SECONDS) {
+    setDestination(sentTo)
+    setCode('')
+    setResendCooldown(cooldown)
+    setStage('code')
+    trackEvent({
+      event: 'verification_started',
+      form_name: 'waitlist',
+      verification_method: 'phone',
+    })
+  }
+
   async function handleSubmit() {
     if (!pickedSide || !slug) return
     setErrorMsg(null)
-    trackEvent({
-      event: 'waitlist_form_submit',
-      form_name: 'waitlist',
-      form_step: 'phone',
-      returning_player: knownReturningPlayer,
-    })
+    // Always name the number: the device's keys no longer decide who a call is for.
+    // Only a device verified before numbers were remembered has no current one.
+    const predictPhone = showPhoneStep ? phone.trim() : (currentPhone ?? undefined)
     try {
-      // Always name the number: the device's keys no longer decide who a call is for.
-      // Only a device verified before numbers were remembered has no current one.
-      const predictPhone = showPhoneStep
-        ? phone.trim()
-        : (currentPhone ?? undefined)
       const result = await predictMutation.mutateAsync({
         choice: pickedSide.toUpperCase() as 'YES' | 'NO',
         phone: predictPhone,
         referralCode,
       })
-      // Only a number the backend has never verified asks for a code. One that has
-      // predicted before lands straight away — unproven if this device holds no key for it.
+      // A number not yet verified in this campaign gets a code; the call lands on confirm.
       if (result.status === 'AWAITING_CODE') {
         startCodeEntry(result.destination ?? '')
         return
@@ -265,7 +278,6 @@ export default function MarketCard() {
       }
       setChangingPhone(false)
       setStage('done')
-      // No code was needed, so this number has played before — not a new signup.
       showThankYou('returning')
       trackEvent({ event: 'prediction_confirmed', side: pickedSide })
     } catch (err) {
@@ -331,6 +343,8 @@ export default function MarketCard() {
               form_name: 'waitlist',
               side: pickedSide ?? undefined,
               referred: Boolean(referralCode),
+              source: 'predict',
+              join_method: 'phone',
             },
       )
     } catch (err) {
@@ -366,10 +380,7 @@ export default function MarketCard() {
       })
     } catch (err) {
       setErrorMsg(
-        getApiErrorMessage(
-          err,
-          'Could not resend the code — try again shortly.',
-        ),
+        getApiErrorMessage(err, 'Could not resend the code — try again shortly.'),
       )
       trackEvent({
         event: 'api_request_failed',
@@ -398,10 +409,7 @@ export default function MarketCard() {
       })
     } catch (err) {
       setErrorMsg(
-        getApiErrorMessage(
-          err,
-          'Could not send the code to that email — try again.',
-        ),
+        getApiErrorMessage(err, 'Could not send the code to that email — try again.'),
       )
       trackEvent({
         event: 'api_request_failed',
@@ -454,7 +462,7 @@ export default function MarketCard() {
           <div className='mb-3 flex items-center justify-between gap-3'>
             <span className='flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-muted uppercase'>
               <span className='animate-pulse-dot h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_6px_var(--color-success)]' />
-              Day {todayQuestion.campaignDay} Question
+              Today&apos;s Question
             </span>
             <span
               aria-label={`Closes in ${closesClock}`}
@@ -465,11 +473,37 @@ export default function MarketCard() {
             </span>
           </div>
 
+          <div className='mb-4 lg:mb-5'>
+            <div className='animate-gradient-text bg-linear-135 from-dark via-success to-dark text-[26px] leading-[1.05] font-extrabold tracking-[-0.02em] uppercase sm:text-3xl lg:text-[40px] dark:from-lime dark:via-success dark:to-lime'>
+              Predict &amp; Win Daily
+            </div>
+          </div>
+
+          <div className='mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2 px-3.5 py-3 lg:mb-6 lg:px-4'>
+            <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime/20 text-dark dark:bg-lime/10 dark:text-lime'>
+              <HugeiconsIcon icon={UserAdd01Icon} size={18} />
+            </span>
+            <div className='min-w-0 flex-1 text-xs leading-snug text-muted lg:text-sm'>
+              <div>
+                <strong className='font-bold text-success'>{WAITLIST_COUNT_LABEL}</strong>{' '}
+                people have joined.
+              </div>
+            </div>
+            <button
+              type='button'
+              onClick={scrollToOptions}
+              className='btn-lift hidden h-9 shrink-0 items-center gap-1.5 rounded-lg bg-lime px-3.5 text-[11px] font-bold tracking-[0.05em] text-lime-ink uppercase shadow-[0_0_12px_rgb(191_250_0/0.3)] hover:bg-[#cfff3d] sm:flex'
+            >
+              <HugeiconsIcon icon={FlashIcon} size={14} />
+              Predict Now
+            </button>
+          </div>
+
           <h2 className='mb-4 text-[17px] leading-snug font-semibold tracking-[-0.01em] text-foreground sm:text-lg lg:mb-6 lg:text-2xl'>
             {todayQuestion.text}
           </h2>
 
-          <div className='mb-3.5 lg:mb-6'>
+          <div id='market-options' className='mb-3.5 scroll-mt-28 lg:mb-6'>
             {stage === 'pick' && (
               <PickStep
                 yesPercent={openDayStats?.yesPercent ?? null}
@@ -564,7 +598,7 @@ export default function MarketCard() {
           <div className='flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted lg:mt-auto lg:pt-4 lg:text-sm'>
             <span>
               <strong className='font-semibold text-foreground'>{predictionCount}</strong>{' '}
-              predictions
+              {openDayStats ? 'predictions today' : 'predictions'}
             </span>
             <button
               type='button'
@@ -576,7 +610,7 @@ export default function MarketCard() {
             </button>
             {closesAtLabel && (
               <span>
-                Closes at{' '}
+                Next question by{' '}
                 <strong className='font-semibold text-foreground'>{closesAtLabel}</strong>
               </span>
             )}
