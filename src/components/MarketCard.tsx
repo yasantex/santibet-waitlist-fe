@@ -24,8 +24,7 @@ import {
 import { useCountdown } from '../hooks/useCountdown'
 import { useAppDispatch, useAppSelector } from '../redux/hooks'
 import {
-  numberProven,
-  numberVerified,
+  playerJoined,
   setStanding,
   switchNumber,
 } from '../redux/campaignSlice'
@@ -36,6 +35,7 @@ import {
   trackEvent,
 } from '../utils/constants'
 import { readReferralCode } from '../utils/page'
+import { standingFromCard } from '../utils/standing'
 import type { PredictionParticipant } from '../types/campaign'
 import WaitlistRulesModal from './modals/WaitlistRulesModal'
 import HowToPlayModal from './modals/HowToPlayModal'
@@ -71,6 +71,8 @@ export default function MarketCard() {
   const cachedStanding = useAppSelector((s) => s.campaign.standing)
   const savedNumbers = useAppSelector((s) => s.campaign.numbers)
   const currentPhone = useAppSelector((s) => s.campaign.currentPhone)
+  // Shown in "Predicting as …" only; the browser's token decides who it plays as.
+  const displayPhone = useAppSelector((s) => s.campaign.displayPhone)
 
   const { activeCampaign, isLoading: campaignLoading } = useActiveCampaign()
   const slug = activeCampaign?.slug ?? null
@@ -187,11 +189,13 @@ export default function MarketCard() {
   const needsPhone = standing?.hasPhone === false
   const showPhoneStep = !knownReturningPlayer || changingPhone || needsPhone
   const otherSavedNumbers = savedNumbers.filter((n) => n.phone !== currentPhone)
-  const predictingAsLabel = knownReturningPlayer && !needsPhone
-    ? currentPhone
-      ? maskPhone(currentPhone)
-      : 'your verified number'
-    : null
+  const shownPhone = currentPhone ?? displayPhone
+  const predictingAsLabel =
+    knownReturningPlayer && !needsPhone
+      ? shownPhone
+        ? maskPhone(shownPhone)
+        : 'your verified number'
+      : null
   const closesClock = closes
     ? `${closes.hours}:${closes.mins}:${closes.secs}`
     : '—:—:—'
@@ -293,9 +297,20 @@ export default function MarketCard() {
             }
           : null,
       )
-      // Proven means this device holds the number's key, so it's one we can play as.
-      if (predictPhone && result.proven !== false) {
-        dispatch(numberProven(predictPhone))
+      // Proven means this browser now holds the player's key (a new token may have come with
+      // the reply), so it plays as them. Their typed number is only kept for display.
+      if (result.proven !== false && result.participantNumber != null && result.referralCode) {
+        dispatch(
+          playerJoined({
+            standing: standingFromCard({
+              ...result,
+              participantNumber: result.participantNumber,
+              referralCode: result.referralCode,
+              rank: result.rank ?? null,
+            }),
+            displayPhone: predictPhone,
+          }),
+        )
       }
       setChangingPhone(false)
       setStage('done')
@@ -305,6 +320,12 @@ export default function MarketCard() {
       const info = errorInfo(err)
       // A code was already sent for this pick — take them back to the code entry
       // instead of dead-ending; resend is available straight away.
+      // An email joiner's first prediction must carry their number.
+      if (info.error_code === 'PHONE_REQUIRED') {
+        setChangingPhone(true)
+        setErrorMsg('Enter your mobile number to finish your first prediction.')
+        return
+      }
       if (info.error_code === 'PREDICTION_AWAITING_CODE') {
         const data = (err as { response?: { data?: { destination?: string } } })
           .response?.data
@@ -344,7 +365,7 @@ export default function MarketCard() {
         phone: codePhone,
         code: code.trim(),
       })
-      dispatch(numberVerified({ phone: codePhone, standing: result }))
+      dispatch(playerJoined({ standing: result, displayPhone: codePhone }))
       setChangingPhone(false)
       setPlacedUnproven(false)
       setPlacedParticipant(null)
@@ -559,6 +580,7 @@ export default function MarketCard() {
             {stage === 'phone' && pickedSide && (
               <PhoneStep
                 pickedSide={pickedSide}
+                requiresCode={activeCampaign?.requiresVerification !== false}
                 predictingAsLabel={predictingAsLabel}
                 otherNumbers={otherSavedNumbers}
                 enteringNumber={changingPhone}
