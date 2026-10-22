@@ -22,6 +22,7 @@ import type {
   CampaignStats,
   ContentPage,
   ContentPageSummary,
+  FaqItem,
   JoinResult,
   LeaderboardEntry,
   ParticipantStanding,
@@ -394,7 +395,7 @@ export function useClaimWinning() {
   })
 }
 
-/** Published content pages (contact, privacy, terms, FAQ…) for the campaign's footer. */
+/** Published content pages (contact, privacy, terms…) for the campaign's footer. */
 export function useContentPages(campaignSlug: string | null | undefined) {
   return useSantibetQuery<{ data: ContentPageSummary[] }>({
     path: '/api/pages',
@@ -412,6 +413,16 @@ export function useContentPage(
   return useSantibetQuery<ContentPage>({
     path: `/api/pages/${pageSlug}`,
     enabled: Boolean(pageSlug) && Boolean(campaignSlug),
+    params: { campaign: campaignSlug },
+    queryOptions: { retry: false, staleTime: 60_000 },
+  })
+}
+
+/** The campaign's own FAQ (never the main app's). An empty list means it has none yet. */
+export function useFaqs(campaignSlug: string | null | undefined) {
+  return useSantibetQuery<{ data: FaqItem[] }>({
+    path: '/api/faqs',
+    enabled: Boolean(campaignSlug),
     params: { campaign: campaignSlug },
     queryOptions: { retry: false, staleTime: 60_000 },
   })

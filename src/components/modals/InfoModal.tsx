@@ -11,11 +11,13 @@ import {
   useRulesSections,
 } from './WaitlistRulesModal'
 import { SOCIAL_ICON } from '../socialIcons'
+import type { FaqItem } from '../../types/campaign'
 import { SUPPORT_EMAIL, socialLinks, trackEvent } from '../../utils/constants'
 import {
   useActiveCampaign,
   useContentPage,
   useContentPages,
+  useFaqs,
 } from '../../hooks/useCampaign'
 
 /** A page slug: one of the built-in pages below, or any page the API publishes. */
@@ -101,23 +103,14 @@ function BuiltInFaq({ onOpenTerms }: { onOpenTerms: () => void }) {
   return <FaqAccordion faqs={faqs} />
 }
 
-/** An FAQ page body: one `##` heading per question, its answer below it. */
-function MarkdownFaq({ body }: { body: string }) {
-  const [intro, ...sections] = body.split(/^## /m)
-  const faqs: Faq[] = sections.map((section, i) => {
-    const [question, ...answer] = section.split('\n')
-    return {
-      id: `q${i + 1}`,
-      q: question.trim(),
-      a: <Markdown>{answer.join('\n').trim()}</Markdown>,
-    }
-  })
-  return (
-    <div className='flex flex-col gap-4'>
-      {intro.trim() && <Markdown>{intro.trim()}</Markdown>}
-      <FaqAccordion faqs={faqs} />
-    </div>
-  )
+/** Answers are plain text: line breaks are kept, nothing is parsed as Markdown or HTML. */
+function PublishedFaq({ items }: { items: FaqItem[] }) {
+  const faqs: Faq[] = items.map((item) => ({
+    id: item.id,
+    q: item.question,
+    a: <span className='whitespace-pre-line'>{item.answer}</span>,
+  }))
+  return <FaqAccordion faqs={faqs} />
 }
 
 function FaqAccordion({ faqs }: { faqs: Faq[] }) {
@@ -239,7 +232,8 @@ function formatUpdated(iso: string) {
 /**
  * Privacy / Terms / FAQ / Contact and any other published page, opened from the footer.
  * A page the API publishes wins; otherwise the built-in version shows (a 404 PAGE_NOT_FOUND
- * just means nothing is published yet).
+ * just means nothing is published yet). The FAQ isn't a page: it comes from /api/faqs, and
+ * the built-in one shows until the campaign has its own.
  */
 export default function InfoModal({
   tab,
@@ -253,8 +247,15 @@ export default function InfoModal({
 }) {
   const { activeCampaign } = useActiveCampaign()
   const tabs = useInfoTabs()
-  const { data: page, isLoading, isError } = useContentPage(tab, activeCampaign?.slug)
-  const showPublished = Boolean(page) && !isError
+  const isFaq = tab === 'faq'
+  const pageQuery = useContentPage(isFaq ? null : tab, activeCampaign?.slug)
+  const faqQuery = useFaqs(isFaq ? activeCampaign?.slug : null)
+  const faqItems = faqQuery.data?.data ?? []
+  const page = isFaq ? undefined : pageQuery.data
+  const isLoading = isFaq ? faqQuery.isLoading : pageQuery.isLoading
+  const showPublished = isFaq
+    ? faqItems.length > 0 && !faqQuery.isError
+    : Boolean(page) && !pageQuery.isError
   const builtIn = tab && isBuiltIn(tab) ? tab : null
   const sections = useRulesSections()
   const privacy = sections.filter((s) => s.title === PRIVACY_SECTION_TITLE)
@@ -296,9 +297,11 @@ export default function InfoModal({
         </div>
       }
     >
-      {showPublished && page ? (
+      {showPublished && isFaq ? (
+        <PublishedFaq items={faqItems} />
+      ) : showPublished && page ? (
         <div className='flex flex-col gap-4'>
-          {page.slug === 'faq' ? <MarkdownFaq body={page.body} /> : <Markdown>{page.body}</Markdown>}
+          <Markdown>{page.body}</Markdown>
           <p className='border-t border-border pt-3 text-xs text-neutral-10'>
             Last updated {formatUpdated(page.updatedAt)}
           </p>
