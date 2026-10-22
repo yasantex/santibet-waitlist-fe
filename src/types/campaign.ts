@@ -232,6 +232,13 @@ export interface ContentPage extends ContentPageSummary {
   body: string
 }
 
+/** One entry of GET /api/faqs, in the order admins set. `answer` is plain text. */
+export interface FaqItem {
+  id: string
+  question: string
+  answer: string
+}
+
 export interface PredictionResult {
   status: 'COMPLETE' | 'AWAITING_CODE'
   campaignDay: number
