@@ -1,9 +1,12 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Rocket01Icon } from '@hugeicons/core-free-icons'
 import { useActiveCampaign } from '../hooks/useCampaign'
 import { useCountdown } from '../hooks/useCountdown'
+
+const RELOAD_JITTER_MS = 5_000
 
 function formatLaunchDate(iso: string | null, timeZone: string | undefined) {
   if (!iso) return null
@@ -33,6 +36,18 @@ export default function LaunchCountdown() {
   const target = activeCampaign?.launchAt ?? activeCampaign?.startsOn ?? null
   const live = useCountdown(target)
   const launchDate = formatLaunchDate(target, activeCampaign?.timeZone)
+
+  // Reload once the countdown hits zero, so open tabs pick up the post-waitlist state.
+  // Only when we watched it cross: a page opened after the deadline must not reload forever.
+  const reached = live?.reached ?? null
+  const sawRunning = useRef(false)
+  useEffect(() => {
+    if (reached === false) sawRunning.current = true
+    if (!reached || !sawRunning.current) return
+    // Spread reloads over a few seconds so every open tab doesn't hit the API at once.
+    const id = setTimeout(() => window.location.reload(), Math.random() * RELOAD_JITTER_MS)
+    return () => clearTimeout(id)
+  }, [reached])
 
   return (
     <div
